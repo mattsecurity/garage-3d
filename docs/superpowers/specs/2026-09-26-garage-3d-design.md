@@ -19,7 +19,7 @@ Uso: personale / portfolio, non commerciale. Nomi reali delle auto ammessi.
 - @dimforge/rapier3d-compat (fisica, `DynamicRayCastVehicleController`)
 - GSAP (transizioni tra modalità, animazione montaggio)
 - Vitest (unit test sulla logica pura)
-- gltf-transform CLI (compressione modelli > 10 MB)
+- gltf-transform CLI (compressione modelli non compressi o > 10 MB)
 
 JavaScript vanilla (ES modules), niente framework UI.
 
