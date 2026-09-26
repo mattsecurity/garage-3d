@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { cuttingMatTexture } from './textures.js';
-import { cutter, eraser, paintJar, pencil, ruler, screwdriver, scissors } from './props.js';
+import { brush, cone, cutter, eraser, glueBottle, paintJar, pencil, ruler, screwdriver, scissors, tapeRoll } from './props.js';
 
 export const MAT = { w: 20, d: 14, thickness: 0.04 };
 
@@ -9,7 +9,7 @@ export class Desk {
   constructor() {
     this.group = new THREE.Group();
     this.group.name = 'desk';
-    /** Props with colliders, for Physics.addProps. */
+    /** Props that become dynamic bodies in Drive (Physics.addProps). */
     this.props = [];
 
     const table = new THREE.Mesh(new THREE.PlaneGeometry(160, 160), new THREE.MeshStandardMaterial({ color: 0xededed, roughness: 0.92 }));
@@ -29,8 +29,8 @@ export class Desk {
   }
 
   #place(object, x, z, rotationY = 0) {
-    object.userData.localBox = new THREE.Box3().setFromObject(object, true);
-    object.position.set(x, 0, z);
+    const onMat = Math.abs(x) <= MAT.w / 2 && Math.abs(z) <= MAT.d / 2;
+    object.position.set(x, onMat ? 0 : -MAT.thickness, z);
     object.rotation.y = rotationY;
     this.group.add(object);
     if (object.userData.collider) this.props.push(object);
@@ -53,6 +53,12 @@ export class Desk {
     this.#place(scissors(), -12.6, -2.6, 0.7);
     this.#place(screwdriver(), -12.4, -6.3, -0.4);
     this.#place(cutter(), 12.8, 4, -0.55);
+    this.#place(tapeRoll(), -8.3, -8.7);
+    this.#place(glueBottle(), 8.4, -8.8);
+    this.#place(brush(0xb5121b), 11.9, 1.1, 0.12);
+    this.#place(brush(0x1b1b1b), 12.1, 1.8, -0.08);
+    // A slalom of 1:18 cones along the near edge of the mat.
+    for (let i = 0; i < 6; i++) this.#place(cone(), -6.25 + i * 2.5, 8.4 + (i % 2) * 0.5);
   }
 
   #addLights() {

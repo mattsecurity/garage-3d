@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import * as THREE from 'three';
+import RAPIER from '@dimforge/rapier3d-compat';
 import { Physics } from '../src/physics/Physics.js';
 
 // Minimal stand-in for a CarModel: what Physics reads.
@@ -114,5 +115,74 @@ describe('Physics timing', () => {
     const before = physics.body.translation().y;
     for (let i = 0; i < 30; i++) physics.step(0, { ...idle, throttle: 1 });
     expect(physics.body.translation().y).toBe(before);
+  });
+});
+
+/** A desk prop as props.js builds it: meshes in a group resting on y = 0, plus collider info. */
+function fakeProp(geometry, y, x, z, collider) {
+  const object = new THREE.Group();
+  const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial());
+  mesh.position.y = y;
+  object.add(mesh);
+  object.position.set(x, 0, z);
+  object.userData.collider = collider;
+  object.updateMatrixWorld(true);
+  return object;
+}
+
+describe('Physics props', () => {
+  it('knocks a prop away when the car drives into it', async () => {
+    const physics = await Physics.create();
+    const box = fakeProp(new THREE.BoxGeometry(0.6, 0.6, 0.6), 0.3, 0, 5, { mass: 20 });
+    physics.addProps([box]);
+    physics.setCar(fakeCar());
+    run(physics, 2.5, { ...idle, throttle: 1 });
+    expect(box.position.z).toBeGreaterThan(6);
+  });
+
+  it('gives each prop the mass it asks for', async () => {
+    const physics = await Physics.create();
+    const jar = fakeProp(new THREE.CylinderGeometry(0.4, 0.4, 0.5, 24), 0.25, 3, 0, { mass: 30 });
+    physics.addProps([jar]);
+    physics.world.step();
+    expect(physics.props[0].body.mass()).toBeCloseTo(30, 0);
+    expect(physics.props[0].body.isDynamic()).toBe(true);
+  });
+
+  it('wheels shove a pencil they run over', async () => {
+    const physics = await Physics.create();
+    const pencil = fakeProp(new THREE.CylinderGeometry(0.13, 0.13, 3.2, 6).rotateZ(Math.PI / 2), 0.13, 0.85, 4, { mass: 5 });
+    physics.addProps([pencil]);
+    physics.setCar(fakeCar());
+    run(physics, 0.5, idle);
+    const before = pencil.position.clone();
+    run(physics, 2, { ...idle, throttle: 1 });
+    expect(pencil.position.distanceTo(before)).toBeGreaterThan(0.1);
+  });
+
+  it('resetProps puts every prop back', async () => {
+    const physics = await Physics.create();
+    const box = fakeProp(new THREE.BoxGeometry(0.6, 0.6, 0.6), 0.3, 0, 5, { mass: 20 });
+    physics.addProps([box]);
+    physics.props[0].body.setTranslation({ x: 4, y: 1, z: 2 }, true);
+    physics.sync();
+    physics.resetProps();
+    expect(box.position.toArray()).toEqual([0, 0, 5]);
+  });
+});
+
+describe('Physics car hull', () => {
+  it('collides with the car model shape when it has meshes', async () => {
+    const physics = await Physics.create();
+    const car = fakeCar();
+    const body = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.7, 4.4), new THREE.MeshBasicMaterial());
+    body.position.y = 0.75;
+    car.root.add(body);
+    car.root.updateMatrixWorld(true);
+    physics.setCar(car);
+    const collider = physics.body.collider(0);
+    expect(collider.shape.type).toBe(RAPIER.ShapeType.ConvexPolyhedron);
+    run(physics, 1, idle);
+    expect(car.root.position.y).toBeCloseTo(0, 1);
   });
 });

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { HOME_ROTATION, VIEWS, fitView, flyTo } from '../core/camera.js';
+import { MAT } from '../world/Desk.js';
 
 const FOLLOW = 0.9; // how much the camera follows the car (1 = fully)
 const ORIGIN = new THREE.Vector3();
@@ -48,6 +49,7 @@ export class DriveMode {
         // Loaded on first drive: Rapier's WebAssembly is the biggest dependency.
         const { Physics } = await import('../physics/Physics.js');
         const physics = await Physics.create();
+        physics.addMat(MAT);
         physics.addProps(this.ctx.desk.props);
         this.ctx.physics = physics;
       } catch (err) {

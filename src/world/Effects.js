@@ -69,7 +69,7 @@ class SkidMarks {
     ];
     corners.forEach(([x, z], k) => {
       const v = i * 4 + k;
-      this.position.set([x, 0.006, z], v * 3);
+      this.position.set([x, point.y + 0.006, z], v * 3);
       this.birth[v] = time;
       this.strength[v] = strength;
     });
@@ -138,7 +138,7 @@ class Smoke {
     const i = this.cursor;
     this.cursor = (this.cursor + 1) % MAX_PUFFS;
     const r = () => Math.random() * 2 - 1;
-    this.pos.set([point.x + r() * 0.15, 0.15, point.z + r() * 0.15], i * 3);
+    this.pos.set([point.x + r() * 0.15, point.y + 0.15, point.z + r() * 0.15], i * 3);
     this.vel.set([r() * 0.6, 0.6 + Math.random() * 0.8, r() * 0.6], i * 3);
     this.age[i] = 0;
     this.life[i] = 0.9 + Math.random() * 0.9;

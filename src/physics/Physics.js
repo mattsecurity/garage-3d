@@ -3,9 +3,61 @@ import * as THREE from 'three';
 import { VEHICLE, driveCommand } from './driving.js';
 
 const WORLD_HALF = { x: 26, z: 18 }; // invisible walls around the desk
+const HULL_POINTS = 8000; // vertices sampled for the car's collision hull
+const MAX_KICK = 4; // largest speed change (units/s) a wheel can give a prop in one step
 const _q = new THREE.Quaternion();
 const _v = new THREE.Vector3();
+const _n = new THREE.Vector3();
+const _axle = new THREE.Vector3();
+const _fwd = new THREE.Vector3();
+const _impulse = new THREE.Vector3();
+const _m = new THREE.Matrix4();
+const _inv = new THREE.Matrix4();
 const UP = new THREE.Vector3(0, 1, 0);
+const hullCache = new WeakMap();
+
+/**
+ * Flat xyz vertex positions of every visible mesh under `root`, in `root`'s own space.
+ * @param {THREE.Object3D} root
+ * @param {number} maxPoints subsample to about this many points
+ * @param {(v: THREE.Vector3) => void} [adjust] tweaks each point in place
+ * @returns {Float32Array[]} one array per mesh
+ */
+function localPoints(root, maxPoints, adjust) {
+  root.updateMatrixWorld(true);
+  _inv.copy(root.matrixWorld).invert();
+  const meshes = [];
+  root.traverseVisible((o) => {
+    if (o.isMesh && o !== root) meshes.push(o);
+  });
+  const total = meshes.reduce((n, m) => n + m.geometry.attributes.position.count, 0);
+  const stride = Math.max(1, Math.ceil(total / maxPoints));
+  return meshes.map((mesh) => {
+    _m.multiplyMatrices(_inv, mesh.matrixWorld);
+    const pos = mesh.geometry.attributes.position;
+    const out = new Float32Array(Math.ceil(pos.count / stride) * 3);
+    for (let i = 0, k = 0; i < pos.count; i += stride, k += 3) {
+      _v.fromBufferAttribute(pos, i).applyMatrix4(_m);
+      adjust?.(_v);
+      out[k] = _v.x;
+      out[k + 1] = _v.y;
+      out[k + 2] = _v.z;
+    }
+    return out;
+  });
+}
+
+/** Car-space points for the chassis hull: the whole car, flattened underneath so it clears the ground. */
+function carHullPoints(car) {
+  if (!hullCache.has(car)) {
+    const clearance = Math.min(0.12, Math.max(...car.wheels.map((w) => w.radius)) * 0.35);
+    const parts = localPoints(car.root, HULL_POINTS, (v) => (v.y = Math.max(v.y, clearance)));
+    const all = new Float32Array(parts.reduce((n, a) => n + a.length, 0));
+    parts.reduce((offset, a) => (all.set(a, offset), offset + a.length), 0);
+    hullCache.set(car, all.length >= 12 ? all : null);
+  }
+  return hullCache.get(car);
+}
 
 /** Rapier world with the desk, its props and a ray-cast vehicle for the current car. */
 export class Physics {
@@ -24,7 +76,7 @@ export class Physics {
     this.lastInput = { throttle: 0, steer: 0, handbrake: false };
     this.upsideDown = 0;
 
-    this.world.createCollider(RAPIER.ColliderDesc.cuboid(60, 0.5, 60).setTranslation(0, -0.5, 0).setFriction(1));
+    this.ground = this.world.createCollider(RAPIER.ColliderDesc.cuboid(60, 0.5, 60).setTranslation(0, -0.5, 0).setFriction(1));
     const { x: W, z: D } = WORLD_HALF;
     for (const [x, z, hx, hz] of [
       [0, -D, W, 0.5],
@@ -35,37 +87,46 @@ export class Physics {
       this.world.createCollider(RAPIER.ColliderDesc.cuboid(hx, 3, hz).setTranslation(x, 3, z).setRestitution(0.3));
   }
 
+  /** Raises a cutting mat of the given size above the table: its top stays at y = 0, the table drops below it. */
+  addMat({ w, d, thickness }) {
+    this.ground.setTranslation({ x: 0, y: -0.5 - thickness, z: 0 });
+    this.world.createCollider(RAPIER.ColliderDesc.cuboid(w / 2, thickness / 2, d / 2).setTranslation(0, -thickness / 2, 0).setFriction(1));
+  }
+
   /**
-   * Adds colliders for desk props. `object.userData.collider` describes the shape;
-   * `object.userData.localBox` (THREE.Box3 in the prop's own space) sizes box colliders.
+   * Makes every desk prop a dynamic body. Its collision shape is the convex hull of each of its meshes (or of all of
+   * them together with `hull: 'merged'`), so it tips, rolls and slides like the object it looks like.
+   * @param {THREE.Object3D[]} objects props with `userData.collider = {mass, friction?, restitution?, hull?}`
    */
   addProps(objects) {
     for (const object of objects) {
       const info = object.userData.collider;
       if (!info) continue;
       const { position: p, quaternion: q } = object;
-      const desc = (info.dynamic ? RAPIER.RigidBodyDesc.dynamic() : RAPIER.RigidBodyDesc.fixed())
-        .setTranslation(p.x, p.y, p.z)
-        .setRotation({ x: q.x, y: q.y, z: q.z, w: q.w });
-      const body = this.world.createRigidBody(desc);
-      let collider;
-      if (info.shape === 'cylinder') {
-        collider = RAPIER.ColliderDesc.cylinder(info.halfHeight, info.radius).setTranslation(0, info.halfHeight, 0).setDensity(40);
-      } else {
-        const box = object.userData.localBox;
-        const c = box.getCenter(new THREE.Vector3());
-        const s = box.getSize(new THREE.Vector3());
-        collider = RAPIER.ColliderDesc.cuboid(s.x / 2, s.y / 2, s.z / 2).setTranslation(c.x, c.y, c.z);
-      }
-      this.world.createCollider(collider.setFriction(0.6).setRestitution(0.2), body);
-      this.props.push({ object, body, dynamic: !!info.dynamic, home: { position: p.clone(), quaternion: q.clone() } });
+      const body = this.world.createRigidBody(
+        RAPIER.RigidBodyDesc.dynamic()
+          .setTranslation(p.x, p.y, p.z)
+          .setRotation({ x: q.x, y: q.y, z: q.z, w: q.w })
+          .setCcdEnabled(true)
+          .setLinearDamping(0.1)
+          .setAngularDamping(0.3),
+      );
+      let hulls = localPoints(object, 4000);
+      if (info.hull === 'merged') hulls = [Float32Array.from(hulls.flatMap((a) => [...a]))];
+      const colliders = hulls
+        .map((points) => RAPIER.ColliderDesc.convexHull(points))
+        .filter(Boolean)
+        .map((desc) => this.world.createCollider(desc.setFriction(info.friction ?? 0.5).setRestitution(info.restitution ?? 0.2), body));
+      // Overlapping hulls (a label around a tin) count their volume twice: close enough for the mass split.
+      const volume = colliders.reduce((v, c) => v + c.volume(), 0);
+      for (const c of colliders) c.setDensity(info.mass / volume);
+      this.props.push({ object, body, home: { position: p.clone(), quaternion: q.clone() } });
     }
   }
 
   /** Puts knocked-over props back where they started. */
   resetProps() {
     for (const prop of this.props) {
-      if (!prop.dynamic) continue;
       const { position: p, quaternion: q } = prop.home;
       prop.body.setTranslation({ x: p.x, y: p.y, z: p.z }, true);
       prop.body.setRotation({ x: q.x, y: q.y, z: q.z, w: q.w }, true);
@@ -88,6 +149,7 @@ export class Physics {
         .setTranslation(p.x, p.y + 0.05, p.z)
         .setRotation({ x: q.x, y: q.y, z: q.z, w: q.w })
         .setCanSleep(false)
+        .setCcdEnabled(true)
         .setLinearDamping(0.05)
         .setAngularDamping(0.4)
         .setAdditionalMassProperties(
@@ -97,16 +159,14 @@ export class Physics {
           { w: 1, x: 0, y: 0, z: 0 },
         ),
     );
+    // Collide with the car's real shape; a box stands in for models without meshes (tests).
+    const hull = carHullPoints(car);
     const halfHeight = Y * 0.22;
     const bottom = Math.max(...car.wheels.map((w) => w.radius)) * 0.9;
-    this.world.createCollider(
-      RAPIER.ColliderDesc.cuboid(X * 0.42, halfHeight, Z * 0.46)
-        .setTranslation(0, bottom + halfHeight, 0)
-        .setDensity(0)
-        .setFriction(0.3)
-        .setRestitution(0.1),
-      this.body,
-    );
+    const shape =
+      (hull && RAPIER.ColliderDesc.convexHull(hull)) ??
+      RAPIER.ColliderDesc.cuboid(X * 0.42, halfHeight, Z * 0.46).setTranslation(0, bottom + halfHeight, 0);
+    this.world.createCollider(shape.setDensity(0).setFriction(0.3).setRestitution(0.1), this.body);
 
     this.vehicle = this.world.createVehicleController(this.body);
     // Mount points sit higher by the static sag so the body rests at y = 0 with the tyres on the ground.
@@ -183,12 +243,39 @@ export class Physics {
       this.body.applyTorqueImpulse({ x: 0, y: (cmd.yawTarget - yawRate) * inertiaY * VEHICLE.driftYawGain * h, z: 0 }, true);
     }
     this.vehicle.updateVehicle(h);
+    this.#pushGround(h);
     this.world.step();
 
     // Flip back automatically after lying on the roof/side for a while.
     const upright = _v.set(0, 1, 0).applyQuaternion(this.#rotation()).y;
     this.upsideDown = upright < 0.3 ? this.upsideDown + h : 0;
     if (this.upsideDown > 1.5) this.resetCar();
+  }
+
+  /**
+   * Rapier's ray-cast wheels push the chassis but not what they stand on: give a dynamic prop under a tyre the
+   * opposite of the suspension load and tyre grip, so a pencil gets squashed and flicked away instead of acting
+   * as a fixed bump.
+   */
+  #pushGround(h) {
+    const rotation = this.#rotation();
+    for (let i = 0; i < 4; i++) {
+      if (!this.vehicle.wheelIsInContact(i)) continue;
+      const body = this.vehicle.wheelGroundObject(i)?.parent();
+      if (!body?.isDynamic()) continue;
+      const n = this.vehicle.wheelContactNormal(i);
+      _n.set(n.x, n.y, n.z);
+      _axle.set(-1, 0, 0).applyAxisAngle(UP, this.vehicle.wheelSteering(i) ?? 0).applyQuaternion(rotation);
+      _fwd.crossVectors(_n, _axle);
+      _impulse
+        .copy(_n)
+        .multiplyScalar(-(this.vehicle.wheelSuspensionForce(i) ?? 0) * h)
+        .addScaledVector(_fwd, -(this.vehicle.wheelForwardImpulse(i) ?? 0))
+        .addScaledVector(_axle, -(this.vehicle.wheelSideImpulse(i) ?? 0));
+      const max = body.mass() * MAX_KICK;
+      if (_impulse.length() > max) _impulse.setLength(max);
+      body.applyImpulseAtPoint(_impulse, this.vehicle.wheelContactPoint(i), true);
+    }
   }
 
   /** Lifts the car, levels it (keeping its heading) and stops it. */
@@ -222,7 +309,7 @@ export class Physics {
       });
     }
     for (const prop of this.props) {
-      if (!prop.dynamic) continue;
+      if (prop.body.isSleeping()) continue;
       const t = prop.body.translation();
       const r = prop.body.rotation();
       prop.object.position.set(t.x, t.y, t.z);
