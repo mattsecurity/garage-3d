@@ -1,19 +1,33 @@
 import './style.css';
 import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { createEnvironment, createRenderer, onResize } from './core/renderer.js';
+import { HOME_ROTATION } from './core/camera.js';
+import { CARS } from './cars/catalog.js';
+import { loadCar } from './cars/garage.js';
 
-// Temporary: proves the toolchain works. Replaced in Task 6.
-const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('webgl'), antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
+// Temporary car viewer while the garage is being built. Open /?car=<catalog id>.
+const renderer = createRenderer(document.getElementById('webgl'));
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xe9e9e9);
+scene.environment = createEnvironment(renderer);
 const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 250);
-camera.position.set(0, 3, 8);
-camera.lookAt(0, 0, 0);
-const cube = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshNormalMaterial());
-scene.add(cube);
+camera.position.set(7, 4, -9);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 0.6, 0);
+controls.enableDamping = true;
+onResize(renderer, camera);
+scene.add(new THREE.GridHelper(20, 20, 0x999999, 0xcccccc), new THREE.AxesHelper(3));
+
+const entry = CARS.find((c) => c.id === new URLSearchParams(location.search).get('car')) ?? CARS[0];
+const car = await loadCar(entry, (p) => console.log(`${entry.id}: ${Math.round(p * 100)}%`));
+car.root.quaternion.copy(HOME_ROTATION);
+scene.add(car.root);
+console.table(car.parts.map((p) => ({ id: p.id, label: p.label, meshes: p.meshIds.length })));
+window.car = car; // poke at it from the devtools console
 document.getElementById('loading').classList.add('hidden');
-renderer.setAnimationLoop((time) => {
-  cube.rotation.y = time / 1000;
+
+renderer.setAnimationLoop(() => {
+  controls.update();
   renderer.render(scene, camera);
 });
