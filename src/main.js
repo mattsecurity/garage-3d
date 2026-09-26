@@ -7,10 +7,13 @@ import { CARS } from './cars/catalog.js';
 import { loadCar } from './cars/garage.js';
 import { Desk } from './world/Desk.js';
 import { Kit } from './kit/Kit.js';
+import { Keyboard } from './input/controls.js';
+import { Joystick } from './input/joystick.js';
 import { Hud } from './ui/hud.js';
 import { createCurtain } from './ui/curtain.js';
 import { HOME_ROTATION } from './core/camera.js';
 import { KitMode } from './modes/KitMode.js';
+import { DriveMode } from './modes/DriveMode.js';
 
 const DESK_BG = 0xe9e9e9;
 
@@ -99,10 +102,13 @@ async function boot() {
     desk,
     hud,
     kit: new Kit(),
+    keyboard: new Keyboard(),
+    joystick: new Joystick(document.getElementById('joystick')),
     curtain: createCurtain(document.getElementById('curtain')),
+    physics: null,
     car: null,
   };
-  modes = { kit: new KitMode(ctx) };
+  modes = { kit: new KitMode(ctx), drive: new DriveMode(ctx) };
   hud.setAvailableModes(Object.keys(modes));
 
   onResize(renderer, camera);
