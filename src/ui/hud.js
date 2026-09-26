@@ -53,13 +53,17 @@ function onClick(button, handler) {
 
 /** All DOM overlay: title, hints, mode switcher, colour palette, credits card, loading screen, errors. */
 export class Hud {
-  /** @param {{onMode:(m:string)=>void, onPrev:()=>void, onNext:()=>void, onPaint:(c:string|null)=>void}} handlers */
-  constructor({ onMode, onPrev, onNext, onPaint }) {
+  /**
+   * @param {{onMode:(m:string)=>void, onPrev:()=>void, onNext:()=>void, onPaint:(c:string|null)=>void,
+   *   onSound:()=>void}} handlers
+   */
+  constructor({ onMode, onPrev, onNext, onPaint, onSound }) {
     this.modes = $('modes');
     this.modeButtons = [...this.modes.querySelectorAll('.mode-btn')];
     for (const b of this.modeButtons) onClick(b, () => onMode(b.dataset.mode));
     onClick($('prev-car'), onPrev);
     onClick($('next-car'), onNext);
+    onClick($('sound-btn'), onSound);
     this.palette = $('palette');
     this.swatches = PALETTE.map((p, i) => {
       const b = element('button', p.color ? 'swatch' : 'swatch original');
@@ -93,6 +97,14 @@ export class Hud {
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') setOpen(false);
     });
+  }
+
+  /** @param {boolean} on sound on (speaker icon) or muted */
+  setSound(on) {
+    const button = $('sound-btn');
+    button.classList.toggle('muted', !on);
+    button.setAttribute('aria-pressed', String(!on));
+    button.setAttribute('aria-label', on ? 'Disattiva audio' : 'Attiva audio');
   }
 
   setAvailableModes(names) {

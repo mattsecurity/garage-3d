@@ -18,6 +18,8 @@ import { HOME_ROTATION } from './core/camera.js';
 import { KitMode } from './modes/KitMode.js';
 import { DriveMode } from './modes/DriveMode.js';
 import { StudioMode } from './modes/StudioMode.js';
+import { AudioEngine } from './audio/AudioEngine.js';
+import { CarSound } from './audio/CarSound.js';
 
 const DESK_BG = 0xe9e9e9;
 
@@ -27,12 +29,20 @@ let mode = null;
 let busy = false;
 let carIndex = 0;
 
+const audio = new AudioEngine();
+const sound = { audio, car: new CarSound(audio) };
+
 const hud = new Hud({
   onMode: (name) => setMode(name),
   onPrev: () => setCar(carIndex - 1),
   onNext: () => setCar(carIndex + 1),
   onPaint: (color) => ctx?.car?.setPaint(color),
+  onSound: () => {
+    audio.setMuted(!audio.muted);
+    hud.setSound(!audio.muted);
+  },
 });
+hud.setSound(!audio.muted);
 
 async function setMode(name) {
   if (busy || !modes[name] || mode?.name === name) return;
@@ -118,6 +128,7 @@ async function boot() {
     tunnelPanel: new TunnelPanel({ onChange: (changes) => tunnel.set(changes) }),
     effects,
     hud,
+    sound,
     kit: new Kit(),
     keyboard: new Keyboard(),
     joystick: new Joystick(document.getElementById('joystick')),
@@ -161,6 +172,7 @@ async function boot() {
     const dt = Math.min(timer.getDelta(), 1 / 20);
     mode?.update(dt);
     effects.update(dt);
+    sound.car.update(dt, camera);
     if (controls.enabled) controls.update(dt);
     renderer.render(scene, camera);
   });

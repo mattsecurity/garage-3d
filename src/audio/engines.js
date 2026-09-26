@@ -44,7 +44,7 @@ const BASE = {
   gearWhine: { teeth: 0, level: 0 },
   starter: { type: 'motor', time: 0.7 },
   squealHz: 900,
-  gain: 1,
+  gain: 1, // loudness trim, set so every car is about as loud at full throttle
 };
 
 /** Modern hybrid F1 power unit (2014–2025): shared by the F1-75 and the MCL39, tweaked per car. */
@@ -68,6 +68,7 @@ const F1_HYBRID = {
   pops: 0.6,
   starter: { type: 'mguk', time: 0.8 },
   squealHz: 620,
+  gain: 0.71,
 };
 
 /** 2026 power unit: no MGU-H (a louder turbo and exhaust) and a much stronger MGU-K. */
@@ -81,11 +82,13 @@ const F1_2026 = {
   turbo: { ...F1_HYBRID.turbo, level: 0.14, muffle: 0.15 },
   hybrid: { whine: 3400, level: 0.2 },
   pops: 0.55,
+  gain: 0.87,
 };
 
 export const ENGINES = {
   'ferrari-458': {
     ...BASE,
+    gain: 0.85,
     label: '4.5 V8 aspirato, albero piatto',
     cylinders: V8_FLAT,
     idle: 1000,
@@ -101,6 +104,7 @@ export const ENGINES = {
   },
   'corvette-c8': {
     ...BASE,
+    gain: 0.86,
     label: '6.2 V8 aspirato, albero a croce',
     cylinders: V8_CROSS,
     idle: 650,
@@ -116,6 +120,7 @@ export const ENGINES = {
   },
   'mclaren-p1': {
     ...BASE,
+    gain: 1.41,
     label: '3.8 V8 biturbo ibrido',
     cylinders: V8_FLAT,
     idle: 850,
@@ -132,6 +137,7 @@ export const ENGINES = {
   },
   'huracan-evo': {
     ...BASE,
+    gain: 1.49,
     label: '5.2 V10 aspirato',
     cylinders: V10,
     idle: 1000,
@@ -146,6 +152,7 @@ export const ENGINES = {
   },
   'gtr-r35': {
     ...BASE,
+    gain: 0.97,
     label: '3.8 V6 biturbo',
     cylinders: V6_60,
     idle: 750,
@@ -162,6 +169,7 @@ export const ENGINES = {
   },
   'mclaren-mp45': {
     ...BASE,
+    gain: 1.22,
     label: '3.5 V10 aspirato (Honda, 1989)',
     cylinders: V10,
     idle: 3500,
@@ -196,6 +204,7 @@ export const ENGINES = {
   },
   'mini-cooper-s': {
     ...BASE,
+    gain: 0.29,
     label: '1.3 4 cilindri in linea',
     cylinders: I4,
     idle: 800,

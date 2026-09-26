@@ -84,3 +84,13 @@ describe('EngineSynth', () => {
     expect(Math.max(...x.map(Math.abs))).toBeLessThan(1e-6);
   });
 });
+
+describe('EngineSynth without a profile', () => {
+  it('outputs silence instead of throwing', () => {
+    const synth = new EngineSynth(SR);
+    const left = new Float32Array(128).fill(1);
+    const right = new Float32Array(128).fill(1);
+    synth.process(left, right);
+    expect(Math.max(...left, ...right)).toBe(0);
+  });
+});

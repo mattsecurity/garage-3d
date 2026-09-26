@@ -100,7 +100,7 @@ svg {
   top: calc(var(--hud-edge) + env(safe-area-inset-top));
   left: calc(var(--hud-edge) + env(safe-area-inset-left));
   z-index: 5;
-  max-width: calc(100vw - 2 * var(--hud-edge) - 48px);
+  max-width: calc(100vw - 2 * var(--hud-edge) - 94px);
   color: var(--hud-fg);
   transition: color 0.4s;
 }
@@ -185,6 +185,20 @@ svg {
 .round svg {
   width: 20px;
   height: 20px;
+}
+
+/* Sound toggle, left of the info button */
+#sound-btn {
+  right: calc(var(--hud-edge) + env(safe-area-inset-right) + 46px);
+}
+
+#sound-btn .sound-off,
+#sound-btn.muted .sound-on {
+  display: none;
+}
+
+#sound-btn.muted .sound-off {
+  display: block;
 }
 
 .card {

@@ -285,7 +285,7 @@ export class EngineSynth {
 
   /** @param {Partial<typeof this.target>} params */
   set(params) {
-    if (params.starter > 0 && this.target.starter === 0) this.mechKick += 4; // solenoid clunk
+    if (params.starter > 0 && this.target.starter === 0) this.mechKick += 2; // solenoid clunk
     Object.assign(this.target, params);
   }
 
@@ -341,7 +341,7 @@ export class EngineSynth {
     const silent =
       !p ||
       (t.rpm < 1 && this.v.rpm < 1 && t.squeal + t.scrub + t.roll + t.whineAmp < 1e-4 && !this.pops.length && this.bov.age > 1);
-    if (silent && this.quiet > QUIET_AFTER * this.sr) {
+    if (!p || (silent && this.quiet > QUIET_AFTER * this.sr)) {
       left.fill(0);
       right.fill(0);
       return;
@@ -486,7 +486,7 @@ export class EngineSynth {
         this.starterPhase = (this.starterPhase + (rpm / 60) * 144 / sr) % 1;
         const ph = TAU * this.starterPhase;
         const tone = Math.sin(ph) + 0.5 * Math.sin(2 * ph) + 0.33 * Math.sin(3 * ph);
-        extra += (tone * 0.08 + this.starterBrush.process(rng.noise()) * 0.05) * v.starter;
+        extra += (tone * 0.04 + this.starterBrush.process(rng.noise()) * 0.025) * v.starter;
       }
 
       // Engine mix with a soft saturation (the "grit" of a loud engine and of the microphone).
