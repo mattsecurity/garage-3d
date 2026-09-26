@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Garage 3D</title>
+    <meta name="description" content="Modellini 3D di auto sportive reali: montali, guidali, guardali in studio." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <canvas id="webgl"></canvas>
+    <div id="curtain"></div>
+
+    <header id="info">
+      <div class="tag logo">GARAGE</div>
+      <div class="tag" id="car-title">[01]</div>
+      <div class="tag" id="hint"></div>
+      <div class="row">
+        <button class="tag btn" id="prev-car" type="button">&lt;Prev</button>
+        <button class="tag btn" id="next-car" type="button">Next&gt;</button>
+      </div>
+    </header>
+
+    <div id="palette" hidden></div>
+
+    <nav id="modes" aria-label="Modalità">
+      <button class="mode-btn" data-mode="kit" type="button"><span class="br">[</span>Kit<span class="br">]</span></button>
+      <button class="mode-btn" data-mode="drive" type="button"><span class="br">[</span>Drive<span class="br">]</span></button>
+      <button class="mode-btn" data-mode="studio" type="button"><span class="br">[</span>Studio<span class="br">]</span></button>
+    </nav>
+
+    <footer id="credits"></footer>
+
+    <div id="joystick">
+      <div class="joystick-base"><div class="joystick-knob"></div></div>
+    </div>
+
+    <div id="loading">
+      <div class="loading-label">LOADING</div>
+      <div class="loading-bar"><div class="loading-fill"></div></div>
+      <div class="loading-name"></div>
+    </div>
+    <div id="toast" role="status"></div>
+    <div id="fatal" hidden></div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
