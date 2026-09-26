@@ -178,8 +178,8 @@ export class Drivetrain {
     if (blipping) load = 0.75;
     else if (shifting && this.shiftKind === 'up' && p.gearbox.type === 'manual') load = 0.04; // lift for the clutch
     else if (gas > 0.02) load = 0.2 + 0.8 * gas;
-    else if (!airborne && this.rpm > p.idle * 1.25) load = 0.04; // overrun: fuel cut
-    else load = 0.18;
+    else if ((coupled && this.rpm > p.idle * 1.25) || this.rpm > target * 1.15) load = 0.04; // overrun: fuel cut
+    else load = 0.18 + 0.2 * this.flare;
     this.load = follow(this.load, load, load > this.load ? 0.03 : 0.06, dt);
     this.cut = limiting || (shifting && this.shiftKind === 'up' && p.gearbox.type !== 'manual') ? 1 : 0;
 
