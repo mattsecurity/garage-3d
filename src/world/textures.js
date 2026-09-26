@@ -20,10 +20,10 @@ export function cuttingMatTexture(w, d, ppu = 100) {
   const [c, g] = canvas(Math.round(w * ppu), Math.round(d * ppu));
   g.fillStyle = '#284470';
   g.fillRect(0, 0, c.width, c.height);
-  for (let i = 0; i < 700; i++) {
+  for (let i = 0; i < 2.5 * w * d; i++) {
     g.fillStyle = `rgba(255,255,255,${Math.random() * 0.035})`;
     g.beginPath();
-    g.arc(Math.random() * c.width, Math.random() * c.height, 20 + Math.random() * 140, 0, Math.PI * 2);
+    g.arc(Math.random() * c.width, Math.random() * c.height, (0.2 + Math.random() * 1.4) * ppu, 0, Math.PI * 2);
     g.fill();
   }
   const margin = 0.6 * ppu;

@@ -85,6 +85,7 @@ export class DriveMode {
     effects.clear();
     car.resetParts();
     await returnToOrigin(car.root);
+    this.ctx.desk.followShadows(ORIGIN);
     controls.target.copy(this.lookAt);
   }
 
@@ -100,6 +101,7 @@ export class DriveMode {
     _desired.fromArray(fitView(VIEWS.drive, camera.aspect).position).add(this.lookAt);
     camera.position.lerp(_desired, k);
     camera.lookAt(this.lookAt);
+    this.ctx.desk.followShadows(this.lookAt);
   }
 
   onCarChanged(car) {

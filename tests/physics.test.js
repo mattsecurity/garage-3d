@@ -187,6 +187,16 @@ describe('Physics car hull', () => {
   });
 });
 
+describe('Physics desk', () => {
+  it('leaves room for a long run: flat out from the centre, the car covers 30 units before any wall', async () => {
+    const physics = await Physics.create();
+    const car = fakeCar();
+    physics.setCar(car);
+    run(physics, 4, { ...idle, throttle: 1 });
+    expect(car.root.position.z).toBeGreaterThan(30);
+  });
+});
+
 describe('Physics drift', () => {
   it('Space + steer at speed holds the tail out, then straightens once released', async () => {
     const physics = await Physics.create();
