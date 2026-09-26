@@ -1,5 +1,6 @@
 // Downloads every car in src/cars/catalog.js into public/models/ and compresses it
-// (Draco geometry, WebP textures ≤ 2048 px). Run: npm run models  (add --force to redo existing files)
+// (Draco geometry, WebP textures ≤ 2048 px, or car.maxTextureSize when set). Run: npm run models
+// (add --force to redo existing files, --only=<id> to limit the run to one car).
 import { mkdir, stat, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { NodeIO, PropertyType } from '@gltf-transform/core';
@@ -11,6 +12,7 @@ import { CARS } from '../src/cars/catalog.js';
 
 const PUBLIC_DIR = new URL('../public/', import.meta.url);
 const force = process.argv.includes('--force');
+const only = process.argv.find((a) => a.startsWith('--only='))?.slice(7);
 
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({
   'draco3d.decoder': await draco3d.createDecoderModule(),
@@ -25,6 +27,7 @@ const exists = (url) =>
 
 await mkdir(new URL('models/', PUBLIC_DIR), { recursive: true });
 for (const car of CARS) {
+  if (only && car.id !== only) continue;
   const out = new URL(car.file, PUBLIC_DIR);
   if (!force && (await exists(out))) {
     console.log(`skip ${car.id} (already downloaded)`);
@@ -36,11 +39,12 @@ for (const car of CARS) {
   const bytes = new Uint8Array(await res.arrayBuffer());
   if (bytes.byteLength < 100_000) throw new Error(`${car.id}: only ${bytes.byteLength} bytes — a Git LFS pointer instead of the model?`);
   const doc = await io.readBinary(bytes);
+  const size = car.maxTextureSize ?? 2048;
   await doc.transform(
     // Materials are left alone on purpose: merging them could rename the paint material.
     dedup({ propertyTypes: [PropertyType.ACCESSOR, PropertyType.MESH, PropertyType.TEXTURE] }),
     prune(),
-    textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [2048, 2048] }),
+    textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [size, size] }),
     draco(),
   );
   const glb = await io.writeBinary(doc);

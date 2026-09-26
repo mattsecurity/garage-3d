@@ -4,6 +4,7 @@
 // paintPattern: material name(s) that can be recoloured; null when the livery is a texture.
 // bodyPattern (optional): extra materials that belong to the body shell in the kit but are not recoloured.
 // credit.licenseUrl: link to the licence text, or null when the licence is unverified (Ferrari 458).
+// maxTextureSize (optional): cap for texture width/height when compressing; default 2048.
 
 export const CARS = [
   {
@@ -109,6 +110,7 @@ export const CARS = [
     wheelPattern: /^(front_wheels|back_wheels)/i,
     paintPattern: null,
     bodyPattern: /^body_mat$/i,
+    maxTextureSize: 1024,
     credit: {
       title: 'McLaren MP4/5 | www.vecarz.com',
       author: 'vecarz',
