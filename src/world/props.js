@@ -40,16 +40,53 @@ export function cutter() {
   return g;
 }
 
+/**
+ * Flat outline (x along the scissors, y across) extruded upwards: the result lies on y = 0 in the prop's space.
+ * `side` mirrors the outline across the long axis (-1 for the lower half of the pair).
+ */
+function flatPiece(outline, holes, thickness, bevel, side) {
+  const flip = (points) => points.map(([x, y]) => new THREE.Vector2(x, y * side));
+  const shape = new THREE.Shape(flip(outline));
+  for (const hole of holes) shape.holes.push(new THREE.Path(flip(hole)));
+  const depth = Math.max(thickness - 2 * bevel, 0.001);
+  return new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: bevel > 0, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 3 })
+    .rotateX(-Math.PI / 2)
+    .translate(0, bevel, 0);
+}
+
+const ellipse = (cx, cy, rx, ry, from, to, steps = 40) =>
+  Array.from({ length: steps + 1 }, (_, i) => {
+    const a = from + ((to - from) * i) / steps;
+    return [cx + rx * Math.cos(a), cy + ry * Math.sin(a)];
+  });
+
+/** Office scissors, slightly open: two steel blades crossing at a screw, moulded plastic finger loops. */
 export function scissors() {
   const g = new THREE.Group();
-  const blade = metal();
-  const handle = std({ color: 0xb5121b, roughness: 0.5 });
-  const b1 = mesh(new THREE.BoxGeometry(2.8, 0.05, 0.22), blade, 1.2, 0.05, 0.08);
-  b1.rotation.y = 0.12;
-  const b2 = mesh(new THREE.BoxGeometry(2.8, 0.05, 0.22), blade, 1.2, 0.1, -0.08);
-  b2.rotation.y = -0.12;
-  const ring = new THREE.TorusGeometry(0.38, 0.09, 12, 32).rotateX(Math.PI / 2);
-  g.add(b1, b2, mesh(ring, handle, -0.5, 0.09, 0.45), mesh(ring.clone(), std({ color: 0x1b1b1b, roughness: 0.5 }), -0.5, 0.09, -0.45));
+  const steel = std({ color: 0xd9dce0, metalness: 1, roughness: 0.22 });
+  const plastic = std({ color: 0x232326, roughness: 0.55 });
+  const deg = Math.PI / 180;
+  // One half: blade to +X from the pivot (spine on +y, cutting edge along y = 0), its tang running back into the
+  // plastic handle, whose loop sits behind the pivot on -y.
+  const blade = [[-0.3, -0.05], [2.35, 0], ...ellipse(0.5, 0, 1.85, 0.26, 0, 90 * deg, 16).slice(1), [0.05, 0.27], [-0.3, 0.05]];
+  const half = (side, loop, lift, plasticHeight) => {
+    const part = new THREE.Group();
+    const { cx, cy, rx, ry } = loop;
+    const outline = [
+      ...ellipse(cx, cy, rx, ry, 60 * deg, 350 * deg),
+      ...ellipse(-0.24, -0.01, 0.08, 0.11, -90 * deg, 90 * deg, 12), // rounded end towards the pivot
+    ];
+    const hole = ellipse(cx, cy, rx - 0.085, ry - 0.085, 0, 2 * Math.PI).slice(1);
+    // The halves' plastic overlaps behind the pivot: different heights keep their top faces apart.
+    part.add(mesh(flatPiece(outline, [hole], plasticHeight, 0.035, side), plastic));
+    part.add(mesh(flatPiece(blade, [], 0.035, 0.006, side), steel, 0, lift));
+    part.rotation.y = 0.1 * side; // slightly open
+    return part;
+  };
+  g.add(half(1, { cx: -0.8, cy: -0.4, rx: 0.36, ry: 0.3 }, 0.08, 0.16)); // thumb loop, upper blade
+  g.add(half(-1, { cx: -0.92, cy: -0.4, rx: 0.48, ry: 0.3 }, 0.045, 0.15)); // finger loop, lower blade
+  const screw = new THREE.SphereGeometry(0.1, 24, 8, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 0.35, 1);
+  g.add(mesh(screw, steel, 0, 0.115)); // domed pivot screw
   g.userData.collider = { mass: 45, friction: 0.35, restitution: 0.15 };
   return g;
 }

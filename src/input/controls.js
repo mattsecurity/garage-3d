@@ -16,7 +16,7 @@ const clamp = (v, min, max) => Math.min(Math.max(v, min), max);
 
 /**
  * @param {{forward?:boolean, backward?:boolean, left?:boolean, right?:boolean, handbrake?:boolean}} keys
- * @param {{x:number, y:number}} stick joystick in [-1, 1], screen axes (y down)
+ * @param {{x:number, y:number, handbrake?:boolean}} stick joystick in [-1, 1], screen axes (y down), plus its Drift button
  * @returns {{throttle:number, steer:number, handbrake:boolean}} steer > 0 means turn left
  */
 export function mapInput(keys, stick = { x: 0, y: 0 }, deadzone = 0.15) {
@@ -28,7 +28,7 @@ export function mapInput(keys, stick = { x: 0, y: 0 }, deadzone = 0.15) {
     throttle = clamp(throttle - stick.y * k, -1, 1);
     steer = clamp(steer - stick.x * k, -1, 1);
   }
-  return { throttle, steer, handbrake: !!keys.handbrake };
+  return { throttle, steer, handbrake: !!(keys.handbrake || stick.handbrake) };
 }
 
 export class Keyboard {

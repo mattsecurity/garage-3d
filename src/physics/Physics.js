@@ -72,6 +72,9 @@ export class Physics {
     this.body = null;
     this.vehicle = null;
     this.steer = 0;
+    this.drifting = false;
+    this.rearGrip = 1;
+    this.path = { heading: 0, rate: 0 };
     this.props = [];
     this.lastInput = { throttle: 0, steer: 0, handbrake: false };
     this.upsideDown = 0;
@@ -191,6 +194,9 @@ export class Physics {
     this.world.step();
     this.car = car;
     this.steer = 0;
+    this.drifting = false;
+    this.rearGrip = 1;
+    this.path = { heading: 0, rate: 0 };
     this.upsideDown = 0;
   }
 
@@ -214,6 +220,28 @@ export class Physics {
     return v.x * _v.x + v.y * _v.y + v.z * _v.z;
   }
 
+  /** How fast the ground velocity turns (rad/s, > 0 = left), smoothed over a few steps. */
+  #pathRate(h) {
+    const v = this.body.linvel();
+    if (Math.hypot(v.x, v.z) < 1) return (this.path.rate = 0);
+    const heading = Math.atan2(v.x, v.z);
+    const turn = Math.atan2(Math.sin(heading - this.path.heading), Math.cos(heading - this.path.heading));
+    this.path.heading = heading;
+    this.path.rate += (turn / h - this.path.rate) * 0.3;
+    return this.path.rate;
+  }
+
+  /** Drift angle: between the nose and the ground velocity, in rad, > 0 when sliding towards the car's left. */
+  slipAngle() {
+    const v = this.body.linvel();
+    const q = this.#rotation();
+    const forward = _v.set(0, 0, 1).applyQuaternion(q);
+    const along = v.x * forward.x + v.z * forward.z;
+    const left = _v.set(1, 0, 0).applyQuaternion(q);
+    const across = v.x * left.x + v.z * left.z;
+    return Math.hypot(along, across) < 1 ? 0 : Math.atan2(across, along);
+  }
+
   /**
    * Advances the simulation by one frame.
    * @param {number} dt seconds since the last frame
@@ -225,8 +253,18 @@ export class Physics {
     const h = Math.min(dt, 1 / 30);
     this.world.timestep = h;
     this.lastInput = input;
-    const cmd = driveCommand(input, this.forwardSpeed(), this.steer, h);
+    const state = {
+      speed: this.forwardSpeed(),
+      slip: this.slipAngle(),
+      pathRate: this.#pathRate(h),
+      steer: this.steer,
+      drifting: this.drifting,
+      rearGrip: this.rearGrip,
+    };
+    const cmd = driveCommand(input, state, h);
     this.steer = cmd.steer;
+    this.drifting = cmd.drifting;
+    this.rearGrip = cmd.rearGrip;
     for (let i = 0; i < 4; i++) {
       const front = i < 2;
       const axle = front ? cmd.front : cmd.rear;
@@ -328,7 +366,7 @@ export class Physics {
     return this.car.wheels.map((wheel, i) => {
       const rear = i >= 2;
       let skid = Math.min(Math.max((lateral - 2.5) / 5, 0), 1);
-      if (rear && handbrake && speed > 2) skid = Math.max(skid, 0.8);
+      if (rear && (this.drifting || (handbrake && speed > 2))) skid = Math.max(skid, 0.8);
       if (rear && throttle > 0.5 && speed < 4) skid = Math.max(skid, 0.6); // launch wheelspin
       const contact = this.vehicle.wheelIsInContact(i);
       const p = contact ? this.vehicle.wheelContactPoint(i) : null;

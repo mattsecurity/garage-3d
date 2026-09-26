@@ -18,10 +18,10 @@ const HINTS = {
   kit: [{ label: 'Trascina per ruotare' }, { label: 'Drive monta il kit' }],
   drive: [
     { keys: ['W', 'A', 'S', 'D'], label: 'Guida' },
-    { keys: ['Spazio'], label: 'Freno a mano' },
+    { keys: ['Spazio'], label: 'Derapata' },
     { keys: ['R'], label: 'Raddrizza' },
   ],
-  driveTouch: [{ label: 'Usa il joystick per guidare' }],
+  driveTouch: [{ label: 'Joystick per guidare · Drift per derapare' }],
   studio: [{ label: 'Galleria del vento' }, { label: 'Trascina per ruotare la vista' }],
 };
 const HINT_SECONDS = 6;

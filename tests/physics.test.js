@@ -186,3 +186,24 @@ describe('Physics car hull', () => {
     expect(car.root.position.y).toBeCloseTo(0, 1);
   });
 });
+
+describe('Physics drift', () => {
+  it('Space + steer at speed holds the tail out, then straightens once released', async () => {
+    const physics = await Physics.create();
+    const car = fakeCar();
+    car.root.position.set(0, 0, -16); // room to reach top speed before the far wall
+    physics.setCar(car);
+    const drive = (seconds, input) => {
+      for (let t = 0; t < seconds; t += 1 / 60) physics.step(1 / 60, { ...idle, ...input });
+    };
+    drive(2, { throttle: 1 });
+    drive(1.5, { throttle: 1, steer: 1, handbrake: true });
+    expect(physics.drifting).toBe(true);
+    expect(physics.slipAngle()).toBeLessThan(-0.35); // nose well inside the left turn
+    expect(physics.forwardSpeed()).toBeGreaterThan(6); // sliding, not stopping
+    expect(physics.wheelStates()[2].skid).toBeGreaterThan(0.5);
+    drive(1, { throttle: 1 });
+    expect(physics.drifting).toBe(false);
+    expect(Math.abs(physics.slipAngle())).toBeLessThan(0.1);
+  });
+});

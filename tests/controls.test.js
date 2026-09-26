@@ -21,5 +21,7 @@ describe('mapInput', () => {
     expect(r.steer).toBe(0);
   });
 
+  it('the Drift button pulls the handbrake', () => expect(mapInput({}, { x: 0, y: 0, handbrake: true }).handbrake).toBe(true));
+
   it('clamps keys + joystick together', () => expect(mapInput({ forward: true }, { x: 0, y: -1 }).throttle).toBe(1));
 });

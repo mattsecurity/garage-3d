@@ -1,10 +1,13 @@
-/** On-screen joystick for touch devices. `value` is in [-1, 1] on screen axes (y down). */
+/**
+ * On-screen joystick for touch devices. `value` is in [-1, 1] on screen axes (y down); `value.handbrake` is true
+ * while the Drift button is held.
+ */
 export class Joystick {
   constructor(el) {
     this.el = el;
     this.base = el.querySelector('.joystick-base');
     this.knob = el.querySelector('.joystick-knob');
-    this.value = { x: 0, y: 0 };
+    this.value = { x: 0, y: 0, handbrake: false };
     this.pointerId = null;
     this.base.addEventListener('pointerdown', (e) => {
       this.pointerId = e.pointerId;
@@ -19,6 +22,15 @@ export class Joystick {
     };
     this.base.addEventListener('pointerup', end);
     this.base.addEventListener('pointercancel', end);
+
+    this.drift = el.querySelector('.drift-btn');
+    const hold = (on) => (e) => {
+      this.value.handbrake = on;
+      this.drift.classList.toggle('pressed', on);
+      if (on) this.drift.setPointerCapture(e.pointerId); // keeps the release even if the finger slides off
+    };
+    this.drift.addEventListener('pointerdown', hold(true));
+    for (const type of ['pointerup', 'pointercancel']) this.drift.addEventListener(type, hold(false));
   }
 
   #move(e) {
@@ -40,6 +52,8 @@ export class Joystick {
     this.pointerId = null;
     this.value.x = 0;
     this.value.y = 0;
+    this.value.handbrake = false;
+    this.drift.classList.remove('pressed');
     this.knob.style.transform = '';
   }
 

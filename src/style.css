@@ -559,6 +559,33 @@ kbd + .hint-label {
   pointer-events: none;
 }
 
+/* Hold to drift, opposite the joystick */
+.drift-btn {
+  position: fixed;
+  right: 24px;
+  bottom: calc(96px + env(safe-area-inset-bottom) + 20px);
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: var(--hud-glass);
+  -webkit-backdrop-filter: var(--hud-blur);
+  backdrop-filter: var(--hud-blur);
+  border: 1px solid var(--hud-border);
+  box-shadow: var(--hud-shadow);
+  color: var(--hud-fg);
+  font-size: 14px;
+  font-weight: 600;
+  touch-action: none;
+  transition:
+    transform 0.15s var(--hud-ease),
+    background-color 0.15s;
+}
+
+.drift-btn.pressed {
+  transform: scale(0.92);
+  background: var(--hud-glass-strong);
+}
+
 @media (max-width: 640px) {
   :root {
     --hud-edge: 14px;
