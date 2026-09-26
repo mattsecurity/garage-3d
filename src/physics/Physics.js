@@ -160,8 +160,9 @@ export class Physics {
    * @param {{throttle:number, steer:number, handbrake:boolean}} input
    */
   step(dt, input) {
-    if (!this.vehicle) return;
-    const h = Math.min(Math.max(dt, 1 / 120), 1 / 30);
+    // THREE.Timer reports dt = 0 while the tab is hidden: keep the world paused then.
+    if (!this.vehicle || dt < 1e-4) return;
+    const h = Math.min(dt, 1 / 30);
     this.world.timestep = h;
     this.lastInput = input;
     const cmd = driveCommand(input, this.forwardSpeed(), this.steer, h);

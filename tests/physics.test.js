@@ -88,3 +88,31 @@ describe('Physics', () => {
     expect(physics.wheelStates()).toEqual([]);
   });
 });
+
+describe('Physics timing', () => {
+  const distance = async (hz) => {
+    const physics = await Physics.create();
+    physics.setCar(fakeCar());
+    for (let i = 0; i < hz; i++) physics.step(1 / hz, idle); // settle for 1 s
+    const z0 = physics.body.translation().z;
+    for (let i = 0; i < hz; i++) physics.step(1 / hz, { ...idle, throttle: 1 }); // 1 s full throttle
+    return physics.body.translation().z - z0;
+  };
+
+  it('covers the same distance at 60, 144 and 240 Hz', async () => {
+    const d60 = await distance(60);
+    const d144 = await distance(144);
+    const d240 = await distance(240);
+    expect(d60).toBeGreaterThan(3);
+    expect(Math.abs(d144 - d60) / d60).toBeLessThan(0.1);
+    expect(Math.abs(d240 - d60) / d60).toBeLessThan(0.1);
+  });
+
+  it('does not move on zero-length frames (hidden tab)', async () => {
+    const physics = await Physics.create();
+    physics.setCar(fakeCar());
+    const before = physics.body.translation().y;
+    for (let i = 0; i < 30; i++) physics.step(0, { ...idle, throttle: 1 });
+    expect(physics.body.translation().y).toBe(before);
+  });
+});
