@@ -1,45 +1,134 @@
 import './style.css';
 import * as THREE from 'three';
+import WebGL from 'three/addons/capabilities/WebGL.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createEnvironment, createRenderer, onResize } from './core/renderer.js';
-import { HOME_ROTATION } from './core/camera.js';
 import { CARS } from './cars/catalog.js';
 import { loadCar } from './cars/garage.js';
 import { Desk } from './world/Desk.js';
 import { Kit } from './kit/Kit.js';
+import { Hud } from './ui/hud.js';
+import { createCurtain } from './ui/curtain.js';
+import { HOME_ROTATION } from './core/camera.js';
+import { KitMode } from './modes/KitMode.js';
 
-// Temporary car viewer while the garage is being built. Open /?car=<catalog id>.
-const renderer = createRenderer(document.getElementById('webgl'));
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xe9e9e9);
-scene.fog = new THREE.Fog(0xe9e9e9, 32, 80);
-scene.environment = createEnvironment(renderer);
-const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 250);
-camera.position.set(0, 16.5, 15);
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(0, 0.6, 0);
-controls.enableDamping = true;
-onResize(renderer, camera);
-scene.add(new Desk().group);
+const DESK_BG = 0xe9e9e9;
 
-const entry = CARS.find((c) => c.id === new URLSearchParams(location.search).get('car')) ?? CARS[0];
-const car = await loadCar(entry, (p) => console.log(`${entry.id}: ${Math.round(p * 100)}%`));
-car.root.quaternion.copy(HOME_ROTATION);
-scene.add(car.root);
-console.table(car.parts.map((p) => ({ id: p.id, label: p.label, meshes: p.meshIds.length })));
-window.car = car; // poke at it from the devtools console
-const kit = new Kit();
-kit.build(car);
-kit.applyKit();
-// Temporary: press K to assemble / take apart the kit.
-window.addEventListener('keydown', (e) => {
-  if (e.code !== 'KeyK' || kit.state === 'animating') return;
-  if (kit.state === 'kit') kit.assemble();
-  else kit.disassemble();
+let ctx = null;
+let modes = {};
+let mode = null;
+let busy = false;
+let carIndex = 0;
+
+const hud = new Hud({
+  onMode: (name) => setMode(name),
+  onPrev: () => setCar(carIndex - 1),
+  onNext: () => setCar(carIndex + 1),
+  onPaint: (color) => ctx?.car?.setPaint(color),
 });
-document.getElementById('loading').classList.add('hidden');
 
-renderer.setAnimationLoop(() => {
-  controls.update();
-  renderer.render(scene, camera);
-});
+async function setMode(name) {
+  if (busy || !modes[name] || mode?.name === name) return;
+  busy = true;
+  const prev = mode;
+  hud.setMode(name);
+  try {
+    await prev?.exit(name);
+    mode = modes[name];
+    await mode.enter(prev?.name ?? null);
+  } catch (err) {
+    console.error(err);
+    hud.toast(err.userMessage ?? 'Modalità non disponibile');
+    mode = modes.kit;
+    hud.setMode('kit');
+    await mode.enter(null);
+  } finally {
+    busy = false;
+  }
+}
+
+async function setCar(index, { initial = false } = {}) {
+  if (busy) return;
+  busy = true;
+  const i = (index + CARS.length) % CARS.length;
+  const entry = CARS[i];
+  hud.setLoading(true, 0, entry.name, !initial);
+  try {
+    const car = await loadCar(entry, (p) => hud.setLoading(true, p, entry.name, !initial));
+    if (ctx.car) ctx.scene.remove(ctx.car.root);
+    car.root.position.set(0, 0, 0);
+    car.root.quaternion.copy(HOME_ROTATION);
+    car.setPaint(null);
+    hud.setActiveSwatch(0);
+    ctx.car = car;
+    ctx.scene.add(car.root);
+    ctx.kit.build(car);
+    mode?.onCarChanged(car);
+    carIndex = i;
+    hud.setCar(i, entry);
+    hud.setCredits(entry.credit);
+  } catch (err) {
+    console.error(err);
+    hud.toast(`Modello non disponibile: ${entry.name}`);
+    if (initial) throw err;
+  } finally {
+    if (!initial) hud.setLoading(false);
+    busy = false;
+  }
+}
+
+async function boot() {
+  const renderer = createRenderer(document.getElementById('webgl'));
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(DESK_BG);
+  scene.fog = new THREE.Fog(DESK_BG, 32, 80);
+  scene.environment = createEnvironment(renderer);
+  const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 250);
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.enabled = false;
+
+  const desk = new Desk();
+  scene.add(desk.group);
+
+  ctx = {
+    renderer,
+    scene,
+    camera,
+    controls,
+    desk,
+    hud,
+    kit: new Kit(),
+    curtain: createCurtain(document.getElementById('curtain')),
+    car: null,
+  };
+  modes = { kit: new KitMode(ctx) };
+  hud.setAvailableModes(Object.keys(modes));
+
+  onResize(renderer, camera);
+
+  const timer = new THREE.Timer();
+  timer.connect(document);
+  renderer.setAnimationLoop((time) => {
+    timer.update(time);
+    const dt = Math.min(timer.getDelta(), 1 / 20);
+    mode?.update(dt);
+    if (controls.enabled) controls.update(dt);
+    renderer.render(scene, camera);
+  });
+
+  await setCar(0, { initial: true });
+  await setMode('kit');
+  hud.setLoading(false);
+}
+
+if (!WebGL.isWebGL2Available()) {
+  hud.setLoading(false);
+  hud.fatal('Questo browser non supporta WebGL 2, che serve per mostrare le auto in 3D.');
+} else {
+  boot().catch((err) => {
+    console.error(err);
+    hud.setLoading(false);
+    hud.fatal('Qualcosa è andato storto durante il caricamento. Ricarica la pagina.');
+  });
+}
