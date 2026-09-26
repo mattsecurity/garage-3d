@@ -159,6 +159,26 @@ export const CARS = [
     },
   },
   {
+    id: 'haas-vf26',
+    name: 'Haas VF-26',
+    year: 2026,
+    file: 'models/haas-vf26.glb',
+    sourceUrl: 'https://raw.githubusercontent.com/datuhira/APEX-Website/main/public/2026-haas-vf26.glb',
+    forward: '+z',
+    length: 5.27, // same body as the RB22
+    wheelPattern: /^(TYRE_(LF|RF|LR|RR)|wheel_(fl|fr|bl|br)|disc_(fl|fr|bl|br)|hub_caliper_(fl|fr|bl|br))/i,
+    paintPattern: null,
+    bodyPattern: /^(chasis|chassis2)/i,
+    maxTextureSize: 1024,
+    credit: {
+      title: '2026 Haas VF-26',
+      author: 'Dave Love (Tyler_Dave)',
+      license: 'CC-BY-4.0',
+      url: 'https://sketchfab.com/3d-models/2026-haas-vf-26-1f41e03886724bc6acd16c92402989bc',
+      licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
+    },
+  },
+  {
     id: 'mini-cooper-s',
     name: 'Mini Cooper S',
     year: 1967,
