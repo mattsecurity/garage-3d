@@ -3,9 +3,9 @@ import { existsSync, statSync } from 'node:fs';
 import { CARS, getCar } from '../src/cars/catalog.js';
 
 describe('catalog', () => {
-  it('has ten cars with unique ids', () => {
-    expect(CARS).toHaveLength(10);
-    expect(new Set(CARS.map((c) => c.id)).size).toBe(10);
+  it('has eleven cars with unique ids', () => {
+    expect(CARS).toHaveLength(11);
+    expect(new Set(CARS.map((c) => c.id)).size).toBe(11);
   });
 
   it('every entry is complete', () => {

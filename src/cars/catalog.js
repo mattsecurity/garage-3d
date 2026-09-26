@@ -120,6 +120,26 @@ export const CARS = [
     },
   },
   {
+    id: 'ferrari-f1-75',
+    name: 'Ferrari F1-75',
+    year: 2022,
+    file: 'models/ferrari-f1-75.glb',
+    sourceUrl: 'https://raw.githubusercontent.com/nero-047/portfolio/main/public/models/f1-75/f1-75-portfolio.55dc5862.glb',
+    forward: '+z',
+    length: 5.59, // the source is already in metres
+    wheelPattern: /^(WHEEL_(LF|RF|LR|RR)|hub_caliper_)/i,
+    paintPattern: null,
+    bodyPattern: /^CAR_CHASSIS$/i,
+    maxTextureSize: 1024,
+    credit: {
+      title: '2022 Ferrari F1-75',
+      author: 'asdasfwefsfwsef (jordansingh2008)',
+      license: 'CC-BY-4.0',
+      url: 'https://sketchfab.com/3d-models/2022-ferrari-f1-75-ce53f6bd404c41ceaebb29813e87cfb9',
+      licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
+    },
+  },
+  {
     id: 'mclaren-mcl39',
     name: 'McLaren MCL39',
     year: 2025,
