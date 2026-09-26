@@ -6,6 +6,7 @@ import { createEnvironment, createRenderer, onResize } from './core/renderer.js'
 import { CARS } from './cars/catalog.js';
 import { loadCar } from './cars/garage.js';
 import { Desk } from './world/Desk.js';
+import { Effects } from './world/Effects.js';
 import { Kit } from './kit/Kit.js';
 import { Keyboard } from './input/controls.js';
 import { Joystick } from './input/joystick.js';
@@ -93,6 +94,7 @@ async function boot() {
 
   const desk = new Desk();
   scene.add(desk.group);
+  const effects = new Effects(scene);
 
   ctx = {
     renderer,
@@ -100,6 +102,7 @@ async function boot() {
     camera,
     controls,
     desk,
+    effects,
     hud,
     kit: new Kit(),
     keyboard: new Keyboard(),
@@ -111,7 +114,9 @@ async function boot() {
   modes = { kit: new KitMode(ctx), drive: new DriveMode(ctx) };
   hud.setAvailableModes(Object.keys(modes));
 
-  onResize(renderer, camera);
+  const viewport = () => effects.setViewport(renderer.domElement.height, camera.fov);
+  onResize(renderer, camera, viewport);
+  viewport();
 
   const timer = new THREE.Timer();
   timer.connect(document);
@@ -119,6 +124,7 @@ async function boot() {
     timer.update(time);
     const dt = Math.min(timer.getDelta(), 1 / 20);
     mode?.update(dt);
+    effects.update(dt);
     if (controls.enabled) controls.update(dt);
     renderer.render(scene, camera);
   });

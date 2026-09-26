@@ -73,12 +73,13 @@ export class DriveMode {
   }
 
   async exit() {
-    const { physics, car, keyboard, joystick, controls } = this.ctx;
+    const { physics, car, keyboard, joystick, controls, effects } = this.ctx;
     this.active = false;
     keyboard.enabled = false;
     joystick.setVisible(false);
     physics.removeCar();
     physics.resetProps();
+    effects.clear();
     car.resetParts();
     await returnToOrigin(car.root);
     controls.target.copy(this.lookAt);
@@ -86,9 +87,10 @@ export class DriveMode {
 
   update(dt) {
     if (!this.active) return;
-    const { physics, keyboard, joystick, camera, car } = this.ctx;
+    const { physics, keyboard, joystick, camera, car, effects } = this.ctx;
     physics.step(dt, keyboard.read(joystick.value));
     physics.sync();
+    effects.feed(physics.wheelStates(), dt);
     _target.copy(car.root.position).multiplyScalar(FOLLOW).setY(0);
     const k = 1 - Math.exp(-3 * dt);
     this.lookAt.lerp(_target, k);
@@ -98,8 +100,9 @@ export class DriveMode {
   }
 
   onCarChanged(car) {
-    const { physics, kit, keyboard } = this.ctx;
+    const { physics, kit, keyboard, effects } = this.ctx;
     kit.applyAssembled();
+    effects.clear();
     physics.setCar(car);
     keyboard.onReset = () => physics.resetCar();
   }
