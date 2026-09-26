@@ -7,6 +7,16 @@ Modellini 3D di auto sportive reali, ispirati alla demo
 - **[Drive]**: i pezzi volano al loro posto, l'auto si vernicia e la guidi sul tavolo (WASD / frecce, Spazio per derapare, R raddrizza; joystick e pulsante Drift su telefono). Ogni oggetto sul tavolo è un corpo fisico: barattoli, coni, matite e attrezzi si ribaltano, rotolano e scivolano quando li urti.
 - **[Studio]**: galleria del vento a vena aperta con rullo mobile. Il flusso attorno al modello viene calcolato (flusso potenziale su griglia 3D con scia turbolenta): il fumo del pettine segue la carrozzeria, la mappa Cp colora le pressioni, e il pannello mostra Cx, area frontale, resistenza, deportanza e potenza alla velocità scelta (coefficienti indicativi). Dietro una vetrata c'è la sala controllo: ingegneri alla console e un videowall con telemetria, mappa delle pressioni e telecamera del fumo in diretta. Tavolozza colori sempre disponibile.
 
+## Audio
+
+Tutto il suono è sintetizzato nel browser (Web Audio, nessun file audio):
+
+- **Motori**: ogni auto ha il suo motore simulato in un AudioWorklet. Ogni cilindro scoppia al suo angolo nell'ordine di accensione reale e manda un impulso di scarico nei collettori, poi nel tubo (guida d'onda con riflessioni) e nel silenziatore. Si sentono anche aspirazione, meccanica, turbo, sibilo ibrido (MGU-K) e ingranaggi a denti dritti. Il cambio ha scalate con doppietta, limitatore e scoppiettii in rilascio. Ci sono l'avviamento e lo spegnimento, e lo scarico suona più aperto quando la coda guarda la camera.
+- **Pneumatici e urti**: stridio in derapata e in partenza. Gli oggetti del tavolo suonano col loro materiale (latta, acciaio, plastica, legno, gomma, cartone).
+- **Studio**: musica ambient elettronica generativa (non si ripete mai uguale) e il ventilatore della galleria, che segue la velocità del vento. Interruttore "Musica" nel pannello.
+
+Il pulsante 🔈 in alto a destra silenzia tutto (la scelta viene ricordata).
+
 ## Avvio
 
 Serve Node.js 22.12 o più recente.
@@ -22,7 +32,7 @@ Altri comandi: `npm test` (unit test), `npm run build` (sito statico in `dist/`,
 
 ## Stack
 
-Vite · three.js · Rapier (fisica, caricata al primo Drive) · GSAP · Vitest. JavaScript senza framework.
+Vite · three.js · Rapier (fisica, caricata al primo Drive) · GSAP · Web Audio · Vitest. JavaScript senza framework.
 
 ## Crediti dei modelli 3D
 
