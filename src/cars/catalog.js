@@ -119,6 +119,27 @@ export const CARS = [
       licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
     },
   },
+  {
+    id: 'mini-cooper-s',
+    name: 'Mini Cooper S',
+    year: 1967,
+    file: 'models/mini-cooper-s.glb',
+    sourceUrl:
+      'https://media.githubusercontent.com/media/Hamza-pn/highway-racer-/main/Assets/new%20car%20models/mini_cooper_s.glb',
+    forward: '+z',
+    length: 3.05,
+    wheelPattern: /^WheelFL/i, // all four wheels are named WheelFL, WheelFL.001… in the source
+    paintPattern: /^(Body|BodyObves)$/i,
+    bodyPattern: /^Roof$/i,
+    maxTextureSize: 512, // ~80 textures after dedup: 1024 px would take ~450 MB of GPU memory
+    credit: {
+      title: 'Mini Cooper S',
+      author: 'kowalski_30',
+      license: 'CC-BY-4.0',
+      url: 'https://sketchfab.com/3d-models/mini-cooper-s-f4eaecb588254bfabf295fedfdf01775',
+      licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
+    },
+  },
 ];
 
 /** @param {string} id */
