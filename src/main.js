@@ -6,6 +6,7 @@ import { HOME_ROTATION } from './core/camera.js';
 import { CARS } from './cars/catalog.js';
 import { loadCar } from './cars/garage.js';
 import { Desk } from './world/Desk.js';
+import { Kit } from './kit/Kit.js';
 
 // Temporary car viewer while the garage is being built. Open /?car=<catalog id>.
 const renderer = createRenderer(document.getElementById('webgl'));
@@ -27,6 +28,15 @@ car.root.quaternion.copy(HOME_ROTATION);
 scene.add(car.root);
 console.table(car.parts.map((p) => ({ id: p.id, label: p.label, meshes: p.meshIds.length })));
 window.car = car; // poke at it from the devtools console
+const kit = new Kit();
+kit.build(car);
+kit.applyKit();
+// Temporary: press K to assemble / take apart the kit.
+window.addEventListener('keydown', (e) => {
+  if (e.code !== 'KeyK' || kit.state === 'animating') return;
+  if (kit.state === 'kit') kit.assemble();
+  else kit.disassemble();
+});
 document.getElementById('loading').classList.add('hidden');
 
 renderer.setAnimationLoop(() => {
