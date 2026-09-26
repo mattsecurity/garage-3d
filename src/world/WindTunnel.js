@@ -4,11 +4,11 @@ import { carFlow } from '../aero/carFlow.js';
 import { Smoke } from '../aero/Smoke.js';
 import { createPressureMaterial, setPressureField } from '../aero/pressureMaterial.js';
 import { aeroFor, aeroForces } from '../aero/aeroData.js';
+import { ControlRoom } from './ControlRoom.js';
 import {
   acousticPanelTexture,
   beltTexture,
   blobTexture,
-  controlRoomTexture,
   ductTexture,
   hallFloorTexture,
   honeycombTexture,
@@ -26,6 +26,7 @@ const RAKE_TOP = 1.7;
 const CEILING_RAIL = HALL.height - 0.12;
 /** Air speed as drawn (m/s) per real km/h: slowed right down so the smoke can be followed by eye. */
 const DRAWN_SPEED = 1 / 40;
+const CAR_CENTRE = new THREE.Vector3(0, 0.6, 0);
 
 const std = (params) => new THREE.MeshStandardMaterial(params);
 
@@ -139,7 +140,7 @@ export class WindTunnel {
     this.group.visible = false;
     this.background = new THREE.Color(0x0d0f12);
     this.fog = new THREE.Fog(0x0d0f12, 16, 42);
-    this.settings = { kmh: 160, rake: 'vertical', rakePos: 0, pressure: false };
+    this.settings = { kmh: 160, smoke: true, rake: 'vertical', rakePos: 0, pressure: false };
     this.car = null;
     this.grid = null;
     this.savedMaterials = new Map();
@@ -153,6 +154,8 @@ export class WindTunnel {
     this.#buildRake();
     this.smoke = new Smoke();
     this.group.add(this.smoke.object);
+    this.controlRoom = new ControlRoom();
+    this.group.add(this.controlRoom.group);
     this.display = new WallDisplay();
     this.display.group.rotation.y = Math.PI / 2;
     this.display.group.position.set(-HALL.halfWidth + 0.08, 3.7, 1.2);
@@ -191,25 +194,18 @@ export class WindTunnel {
     epoxy.receiveShadow = true;
     this.group.add(mirror, epoxy);
 
+    // Left wall; the right one belongs to the control room (it has the window cut into it).
     const wall = std({ map: acousticPanelTexture([length / 4, height / 4]), roughness: 0.92 });
-    for (const sign of [-1, 1]) {
-      const side = new THREE.Mesh(new THREE.PlaneGeometry(length, height), wall);
-      side.rotation.y = -sign * (Math.PI / 2);
-      side.position.set(sign * halfWidth, height / 2, midZ);
-      side.receiveShadow = true;
-      this.group.add(side);
-    }
+    const side = new THREE.Mesh(new THREE.PlaneGeometry(length, height), wall);
+    side.rotation.y = Math.PI / 2;
+    side.position.set(-halfWidth, height / 2, midZ);
+    side.receiveShadow = true;
+    this.group.add(side);
     const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(2 * halfWidth, length), std({ color: 0x15171a, roughness: 0.95 }));
     ceiling.rotation.x = Math.PI / 2;
     ceiling.position.set(0, height, midZ);
     this.group.add(ceiling);
 
-    // Control room window on the right wall.
-    const glass = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 1.9), new THREE.MeshBasicMaterial({ map: controlRoomTexture(), color: 0x9aa3b0 }));
-    glass.rotation.y = -Math.PI / 2;
-    glass.position.set(halfWidth - 0.02, 2.75, -0.5);
-    const frame = std({ color: 0x0f1113, roughness: 0.6, metalness: 0.4 });
-    this.group.add(glass, box(0.08, 0.1, 6.6, frame, halfWidth - 0.05, 1.75, -0.5), box(0.08, 0.1, 6.6, frame, halfWidth - 0.05, 3.75, -0.5));
 
     // Overhead LED strip fixtures and the rails that carry them.
     this.fixtures = [];
@@ -375,7 +371,8 @@ export class WindTunnel {
 
   /** Rebuilds the rake for the current settings and tells the smoke where its nozzles are. */
   #placeRake() {
-    const { rake: mode, rakePos } = this.settings;
+    const { smoke, rakePos } = this.settings;
+    const mode = smoke ? this.settings.rake : 'off';
     this.rake.traverse((o) => o.geometry?.dispose());
     this.rake.clear();
     const { metal, dark } = this.rakeParts;
@@ -452,6 +449,7 @@ export class WindTunnel {
     this.smoke.setGrid(this.grid);
     setPressureField(this.pressureMaterial, this.grid);
     this.blob.scale.set(car.size.x * 1.25, car.size.z * 1.12, 1);
+    this.controlRoom.setCar(car, this.grid);
     this.#applyPressure();
   }
 
@@ -478,11 +476,11 @@ export class WindTunnel {
     }
   }
 
-  /** @param {Partial<{kmh:number, rake:'vertical'|'horizontal'|'off', rakePos:number, pressure:boolean}>} changes */
+  /** @param {Partial<{kmh:number, smoke:boolean, rake:'vertical'|'horizontal', rakePos:number, pressure:boolean}>} changes */
   set(changes) {
     const before = { ...this.settings };
     Object.assign(this.settings, changes);
-    if (before.rake !== this.settings.rake || before.rakePos !== this.settings.rakePos) this.#placeRake();
+    if (['smoke', 'rake', 'rakePos'].some((k) => before[k] !== this.settings[k])) this.#placeRake();
     if (before.pressure !== this.settings.pressure) this.#applyPressure();
   }
 
@@ -504,6 +502,7 @@ export class WindTunnel {
     for (const w of this.car?.wheels ?? []) if (w.hub) w.hub.rotation.x += (speed / w.radius) * dt;
     this.smoke.update(dt, speed);
     const r = this.readout;
+    this.controlRoom.update(dt, { readout: r, smoke: this.smoke, car: CAR_CENTRE });
     const lift = r.downforceKg < 0;
     this.display.draw({
       title: `${this.car?.entry.name ?? ''} · GALLERIA DEL VENTO`.toUpperCase(),

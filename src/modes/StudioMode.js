@@ -10,6 +10,11 @@ export class StudioMode {
   constructor(ctx) {
     this.ctx = ctx;
     this.fov = null;
+    // Re-pick the lens when the window changes shape (main.js has already updated the aspect by then).
+    this.onResize = () => {
+      this.#setLens(false);
+      this.#setLens(true);
+    };
   }
 
   /** The hall is too small to back away from the car on portrait screens: widen the lens instead (and undo it). */
@@ -51,10 +56,12 @@ export class StudioMode {
     });
     hud.showPalette(car.paintable);
     tunnelPanel.show(true, tunnel.settings);
+    window.addEventListener('resize', this.onResize);
   }
 
   async exit(to) {
     const { controls, camera, hud, tunnel, tunnelPanel } = this.ctx;
+    window.removeEventListener('resize', this.onResize);
     Object.assign(controls, { enabled: false, autoRotate: false, minPolarAngle: 0 });
     hud.showPalette(false);
     tunnelPanel.show(false);

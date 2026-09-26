@@ -5,7 +5,7 @@ Modellini 3D di auto sportive reali, ispirati alla demo
 
 - **[Kit]**: l'auto è un kit di plastica grigia, con i pezzi ancora sulle stampate, sopra un tappetino da taglio.
 - **[Drive]**: i pezzi volano al loro posto, l'auto si vernicia e la guidi sul tavolo (WASD / frecce, Spazio per derapare, R raddrizza; joystick e pulsante Drift su telefono). Ogni oggetto sul tavolo è un corpo fisico: barattoli, coni, matite e attrezzi si ribaltano, rotolano e scivolano quando li urti.
-- **[Studio]**: galleria del vento a vena aperta con rullo mobile. Il flusso attorno al modello viene calcolato (flusso potenziale su griglia 3D con scia turbolenta): il fumo del pettine segue la carrozzeria, la mappa Cp colora le pressioni, e il pannello mostra Cx, area frontale, resistenza, deportanza e potenza alla velocità scelta (coefficienti indicativi). Tavolozza colori sempre disponibile.
+- **[Studio]**: galleria del vento a vena aperta con rullo mobile. Il flusso attorno al modello viene calcolato (flusso potenziale su griglia 3D con scia turbolenta): il fumo del pettine segue la carrozzeria, la mappa Cp colora le pressioni, e il pannello mostra Cx, area frontale, resistenza, deportanza e potenza alla velocità scelta (coefficienti indicativi). Dietro una vetrata c'è la sala controllo: ingegneri alla console e un videowall con telemetria, mappa delle pressioni e telecamera del fumo in diretta. Tavolozza colori sempre disponibile.
 
 ## Avvio
 
@@ -39,5 +39,7 @@ Vite · three.js · Rapier (fisica, caricata al primo Drive) · GSAP · Vitest. 
 | Red Bull RB22 (2026) | Dave Love (Tyler_Dave) | CC-BY-4.0 | [Sketchfab](https://sketchfab.com/3d-models/2026-red-bull-racing-rb22-8e5a68a7991c4a46bd66a879c060b3c5) |
 | Haas VF-26 (2026) | Dave Love (Tyler_Dave) | CC-BY-4.0 | [Sketchfab](https://sketchfab.com/3d-models/2026-haas-vf-26-1f41e03886724bc6acd16c92402989bc) |
 | Mini Cooper S | kowalski_30 | CC-BY-4.0 | [Sketchfab](https://sketchfab.com/3d-models/mini-cooper-s-f4eaecb588254bfabf295fedfdf01775) |
+
+Gli ingegneri della sala controllo sono l'avatar Ready Player Me incluso negli [esempi di three.js](https://github.com/mrdoob/three.js/tree/dev/examples/models/gltf) (`readyplayer.me.glb`), senza cappello e con texture ricompresse (`npm run people`); pose, capelli e cuffie sono generati nel codice.
 
 I modelli sono stati modificati (ricompressi con Draco + WebP; per la Mini la texture della vernice è diventata una mappa di ombreggiatura, così la tavolozza può ricolorarla). Le F1 moderne sono ricostruzioni amatoriali, non CAD delle squadre: la MCL39 è una scocca originale dell'autore con la livrea McLaren 2025, RB22 e VF-26 sono le livree 2026 di Red Bull e Haas sulla stessa scocca di generazione precedente. Licenza CC-BY-4.0: https://creativecommons.org/licenses/by/4.0/. Nomi e marchi delle auto appartengono ai rispettivi produttori: il progetto è pensato per uso personale / portfolio, non commerciale.

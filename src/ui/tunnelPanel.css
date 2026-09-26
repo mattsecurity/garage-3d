@@ -1,11 +1,12 @@
 /* Wind-tunnel panel (Studio mode), built on the shared --hud-* tokens from style.css. */
 #tunnel {
+  --t-accent: #30d158;
   position: fixed;
   left: var(--hud-edge, 20px);
   top: 50%;
-  transform: translateY(-42%);
-  width: 284px;
-  max-height: calc(100vh - 240px);
+  transform: translateY(-44%);
+  width: 300px;
+  max-height: calc(100vh - 200px);
   overflow: auto;
   z-index: 5;
   color: var(--hud-fg);
@@ -21,6 +22,10 @@
   scrollbar-width: none;
 }
 
+#tunnel::-webkit-scrollbar {
+  display: none;
+}
+
 #tunnel[hidden] {
   display: none;
 }
@@ -28,12 +33,10 @@
 #tunnel summary {
   list-style: none;
   cursor: pointer;
-  padding: 14px 16px;
-  font-weight: 600;
-  font-size: 14px;
+  padding: 16px 18px 14px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 10px;
   border-radius: var(--hud-radius-card, 18px);
 }
 
@@ -41,10 +44,52 @@
   display: none;
 }
 
+#tunnel .t-title {
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  flex: 1;
+}
+
+/* "Running" status chip with a pulsing dot. */
+#tunnel .t-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--hud-muted);
+  padding: 3px 8px 3px 7px;
+  border-radius: 999px;
+  background: var(--hud-glass);
+}
+
+#tunnel .t-live i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--hud-muted);
+}
+
+#tunnel.running .t-live i {
+  background: var(--t-accent);
+  box-shadow: 0 0 0 0 rgba(48, 209, 88, 0.6);
+  animation: t-pulse 1.8s infinite;
+}
+
+@keyframes t-pulse {
+  70% {
+    box-shadow: 0 0 0 6px rgba(48, 209, 88, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(48, 209, 88, 0);
+  }
+}
+
 #tunnel summary::after {
   content: '';
   width: 7px;
   height: 7px;
+  margin-left: 2px;
   border-right: 1.6px solid var(--hud-muted);
   border-bottom: 1.6px solid var(--hud-muted);
   transform: translateY(-2px) rotate(45deg);
@@ -56,49 +101,163 @@
 }
 
 #tunnel .t-body {
-  padding: 0 16px 14px;
+  padding: 0 18px 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
 }
 
-#tunnel .t-row {
-  display: grid;
-  grid-template-columns: 72px 1fr auto;
-  align-items: center;
+#tunnel .t-group {
+  padding: 12px 0;
+  border-top: 1px solid var(--hud-border);
+  display: flex;
+  flex-direction: column;
   gap: 10px;
 }
 
-#tunnel .t-row.disabled {
-  opacity: 0.4;
-}
-
-#tunnel .t-row .t-seg {
-  grid-column: 2 / 4;
-}
-
-#tunnel .t-label,
-#tunnel dt {
-  color: var(--hud-muted);
-  font-size: 12px;
-}
-
-#tunnel output {
-  min-width: 66px;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-  font-size: 12px;
-}
-
-#tunnel input[type='range'] {
-  width: 100%;
-  margin: 0;
-  accent-color: var(--hud-fg);
-  cursor: pointer;
-}
-
-#tunnel .t-seg {
+#tunnel .t-head {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 24px;
+}
+
+#tunnel .t-head-small {
+  min-height: 0;
+  margin-top: 2px;
+}
+
+#tunnel .t-label {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+#tunnel .t-head-small .t-label {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--hud-muted);
+}
+
+#tunnel .t-value {
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+#tunnel .t-value-small {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+#tunnel small {
+  font-size: 0.72em;
+  font-weight: 500;
+  color: var(--hud-muted);
+  margin-left: 3px;
+}
+
+/* Collapsible sub-controls under a switch. */
+#tunnel .t-sub {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#tunnel .t-sub.open {
+  display: flex;
+}
+
+/* Sliders: thin track filled up to the thumb (--fill is set from JS). */
+#tunnel input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 20px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  --fill: 50%;
+}
+
+#tunnel input[type='range']::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(to right, var(--hud-fg) var(--fill), var(--hud-glass-strong) var(--fill));
+}
+
+#tunnel input[type='range']::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--hud-glass-strong);
+}
+
+#tunnel input[type='range']::-moz-range-progress {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--hud-fg);
+}
+
+#tunnel input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -7px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow:
+    0 1px 4px rgba(0, 0, 0, 0.35),
+    0 0 0 0.5px rgba(0, 0, 0, 0.1);
+  transition: transform 0.15s var(--hud-ease);
+}
+
+#tunnel input[type='range']::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+#tunnel input[type='range']:active::-webkit-slider-thumb {
+  transform: scale(1.12);
+}
+
+/* iOS-style switch. */
+#tunnel .t-switch {
+  flex: none;
+  position: relative;
+  width: 42px;
+  height: 25px;
+  border-radius: 999px;
+  background: var(--hud-glass-strong);
+  transition: background 0.25s var(--hud-ease);
+}
+
+#tunnel .t-switch i {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform 0.25s var(--hud-ease);
+}
+
+#tunnel .t-switch[aria-checked='true'] {
+  background: var(--t-accent);
+}
+
+#tunnel .t-switch[aria-checked='true'] i {
+  transform: translateX(17px);
+}
+
+/* Segmented control. */
+#tunnel .t-seg {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 2px;
   background: var(--hud-glass);
   border-radius: 10px;
@@ -106,30 +265,27 @@
 }
 
 #tunnel .t-seg button {
-  flex: 1;
   color: var(--hud-muted);
   font-size: 12px;
-  padding: 6px 4px;
+  padding: 7px 6px;
   border-radius: 8px;
   transition:
     background 0.2s var(--hud-ease),
     color 0.2s var(--hud-ease);
 }
 
-#tunnel .t-seg button[aria-pressed='true'] {
+#tunnel .t-seg button[aria-checked='true'] {
   background: var(--hud-glass-strong);
   color: var(--hud-fg);
   font-weight: 500;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
 }
 
 #tunnel summary:focus-visible,
+#tunnel button:focus-visible,
 #tunnel input:focus-visible {
   outline: 2px solid var(--hud-focus);
   outline-offset: 2px;
-}
-
-#tunnel .t-legend[hidden] {
-  display: none;
 }
 
 /* Turbo colormap, low Cp (suction) on the left, high (stagnation) on the right. */
@@ -159,7 +315,7 @@
 #tunnel .t-scale {
   display: flex;
   justify-content: space-between;
-  margin-top: 5px;
+  margin-top: -4px;
   color: var(--hud-muted);
   font-size: 11px;
   font-variant-numeric: tabular-nums;
@@ -167,25 +323,32 @@
 
 #tunnel .t-data {
   margin: 0;
-  padding-top: 12px;
+  padding: 14px 0 12px;
   border-top: 1px solid var(--hud-border);
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px 14px;
+  gap: 12px 14px;
 }
 
 #tunnel .t-data div {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
+  min-width: 0;
+}
+
+#tunnel dt {
+  color: var(--hud-muted);
+  font-size: 11px;
 }
 
 #tunnel dd {
   margin: 0;
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 600;
   letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 #tunnel .t-note {
@@ -213,6 +376,6 @@
     bottom: calc(80px + env(safe-area-inset-bottom));
     transform: none;
     width: auto;
-    max-height: 46vh;
+    max-height: 50vh;
   }
 }

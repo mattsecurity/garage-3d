@@ -241,51 +241,6 @@ export function signTexture(text, width = 2048, height = 160) {
   return texture;
 }
 
-/** Control room glimpsed through its window: dark, a desk of glowing monitors. */
-export function controlRoomTexture() {
-  const [c, g] = canvas(1024, 320);
-  const grad = g.createLinearGradient(0, 0, 0, 320);
-  grad.addColorStop(0, '#0b1220');
-  grad.addColorStop(1, '#141c2b');
-  g.fillStyle = grad;
-  g.fillRect(0, 0, 1024, 320);
-  const screens = [
-    [90, 150, 150, 90, '#1d6fd6'],
-    [260, 140, 170, 100, '#1a9e8f'],
-    [450, 150, 150, 90, '#d68a1d'],
-    [640, 140, 170, 100, '#1d6fd6'],
-    [830, 150, 120, 90, '#6a52c9'],
-  ];
-  for (const [x, y, w, h, color] of screens) {
-    g.fillStyle = '#05080d';
-    g.fillRect(x - 6, y - 6, w + 12, h + 12);
-    g.fillStyle = color;
-    g.globalAlpha = 0.55;
-    g.fillRect(x, y, w, h);
-    g.globalAlpha = 0.9;
-    g.strokeStyle = '#e8f1ff';
-    g.lineWidth = 2;
-    g.beginPath();
-    for (let i = 0; i <= 20; i++) g[i ? 'lineTo' : 'moveTo'](x + (i / 20) * w, y + h * (0.55 + 0.3 * Math.sin(i * 0.9 + x)));
-    g.stroke();
-    g.globalAlpha = 1;
-  }
-  g.fillStyle = '#070a10';
-  g.fillRect(0, 262, 1024, 58); // desk
-  // Window mullions and a faint reflection.
-  g.fillStyle = '#1e2229';
-  for (const x of [0, 340, 680, 1018]) g.fillRect(x, 0, 6, 320);
-  const glare = g.createLinearGradient(0, 0, 1024, 320);
-  glare.addColorStop(0.2, 'rgba(255,255,255,0)');
-  glare.addColorStop(0.45, 'rgba(255,255,255,0.07)');
-  glare.addColorStop(0.6, 'rgba(255,255,255,0)');
-  g.fillStyle = glare;
-  g.fillRect(0, 0, 1024, 320);
-  const texture = toTexture(c);
-  texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
-  return texture;
-}
-
 /** Soft dark blob for contact shadows: opaque centre fading to clear at the edge (use as alphaMap). */
 export function blobTexture() {
   const [c, g] = canvas(256, 256);
@@ -296,4 +251,109 @@ export function blobTexture() {
   g.fillStyle = grad;
   g.fillRect(0, 0, 256, 256);
   return toTexture(c, { srgb: false });
+}
+
+/** Dark blue-grey carpet tiles, 50 cm, for the control room floor. One texture covers 2 x 2 m. */
+export function carpetTexture(repeat) {
+  const [c, g] = canvas(512, 512);
+  g.fillStyle = '#23272e';
+  g.fillRect(0, 0, 512, 512);
+  for (let i = 0; i < 9000; i++) {
+    g.fillStyle = `rgba(${Math.random() < 0.5 ? '255,255,255' : '0,0,0'},${Math.random() * 0.08})`;
+    g.fillRect(Math.random() * 512, Math.random() * 512, 2, 2);
+  }
+  g.strokeStyle = 'rgba(0,0,0,0.35)';
+  g.lineWidth = 2;
+  for (let x = 0; x <= 512; x += 128) {
+    g.beginPath();
+    g.moveTo(x, 0);
+    g.lineTo(x, 512);
+    g.stroke();
+    g.beginPath();
+    g.moveTo(0, x);
+    g.lineTo(512, x);
+    g.stroke();
+  }
+  return toTexture(c, { repeat });
+}
+
+/** Suspended-ceiling acoustic tiles, 60 cm. One texture covers 2.4 x 2.4 m. */
+export function ceilingTileTexture(repeat) {
+  const [c, g] = canvas(512, 512);
+  g.fillStyle = '#2b2e33';
+  g.fillRect(0, 0, 512, 512);
+  mottle(g, 512, 512, 200, 0.03);
+  g.fillStyle = '#16181b';
+  for (let x = 0; x < 512; x += 128) {
+    g.fillRect(x, 0, 4, 512);
+    g.fillRect(0, x, 512, 4);
+  }
+  return toTexture(c, { repeat });
+}
+
+/** Front of a server rack: dark perforated doors with rows of status LEDs. */
+export function rackTexture() {
+  const [c, g] = canvas(256, 512);
+  g.fillStyle = '#15171a';
+  g.fillRect(0, 0, 256, 512);
+  g.fillStyle = 'rgba(255,255,255,0.05)';
+  for (let y = 8; y < 512; y += 6) for (let x = 8; x < 248; x += 6) g.fillRect(x, y, 2, 2);
+  for (let u = 0; u < 20; u++) {
+    const y = 20 + u * 24;
+    g.fillStyle = '#0c0d0f';
+    g.fillRect(14, y, 228, 18);
+    for (let k = 0; k < 6; k++) {
+      g.fillStyle = ['#2bd46b', '#2bd46b', '#3aa0ff', '#ffb020', '#2bd46b', '#2bd46b'][(u + k) % 6];
+      g.globalAlpha = Math.random() < 0.8 ? 1 : 0.25;
+      g.fillRect(24 + k * 10, y + 7, 4, 4);
+      g.globalAlpha = 1;
+    }
+  }
+  return toTexture(c);
+}
+
+/** Hair: fine dark strands over mid tones, used as a multiply map on the hair shells. */
+export function hairTexture() {
+  const [c, g] = canvas(256, 256);
+  g.fillStyle = '#9a9a9a';
+  g.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 2600; i++) {
+    const x = Math.random() * 256;
+    const y = Math.random() * 256;
+    const l = 6 + Math.random() * 18;
+    const shade = Math.random() < 0.5 ? 40 + Math.random() * 60 : 150 + Math.random() * 90;
+    g.strokeStyle = `rgba(${shade},${shade},${shade},0.55)`;
+    g.lineWidth = 1;
+    g.beginPath();
+    g.moveTo(x, y);
+    g.lineTo(x + (Math.random() - 0.5) * 3, y + l);
+    g.stroke();
+  }
+  return toTexture(c, { repeat: [3, 2] });
+}
+
+/** Soft diagonal glare bands for window glass (use as an additive map). */
+export function glareTexture() {
+  const [c, g] = canvas(512, 256);
+  g.fillStyle = '#000';
+  g.fillRect(0, 0, 512, 256);
+  for (const [x, w, a] of [
+    [60, 70, 0.5],
+    [150, 18, 0.35],
+    [300, 110, 0.28],
+    [440, 26, 0.4],
+  ]) {
+    const grad = g.createLinearGradient(x - w, 0, x + w, 0);
+    grad.addColorStop(0, 'rgba(255,255,255,0)');
+    grad.addColorStop(0.5, `rgba(255,255,255,${a})`);
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    g.save();
+    g.transform(1, 0, -0.45, 1, 60, 0); // slant
+    g.fillStyle = grad;
+    g.fillRect(x - w, 0, 2 * w, 256);
+    g.restore();
+  }
+  const texture = toTexture(c);
+  texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
+  return texture;
 }
