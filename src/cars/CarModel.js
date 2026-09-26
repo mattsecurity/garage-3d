@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { buildParts } from './parts.js';
 import { splitTrianglesByX, compactIndices } from './split.js';
+import { bakedWheelYaw, spinsWithWheel } from './wheels.js';
 
 /** Shared by every car material: uKit = 0 shows the real materials, 1 shows grey kit plastic. */
 export const kitUniforms = {
@@ -9,6 +10,8 @@ export const kitUniforms = {
 };
 
 const PAINT_FINISH = { roughness: 0.3, metalness: 0.45, clearcoat: 1, clearcoatRoughness: 0.05 };
+const UP = new THREE.Vector3(0, 1, 0);
+const MAX_FOOTPRINT_POINTS = 20000;
 
 /** Injects the kit-plastic blend into a standard/physical material (once). */
 export function patchKitMaterial(material) {
@@ -70,6 +73,23 @@ function splitAxleMesh(mesh, gap) {
   return pieces;
 }
 
+/** Flat [x, z, ...] vertex positions of `meshes` in their parent's space, subsampled to a manageable count. */
+function wheelFootprint(meshes) {
+  const total = meshes.reduce((n, m) => n + m.geometry.attributes.position.count, 0);
+  const stride = Math.max(1, Math.ceil(total / MAX_FOOTPRINT_POINTS));
+  const xz = [];
+  const v = new THREE.Vector3();
+  for (const mesh of meshes) {
+    mesh.updateMatrix();
+    const pos = mesh.geometry.attributes.position;
+    for (let i = 0; i < pos.count; i += stride) {
+      v.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrix);
+      xz.push(v.x, v.z);
+    }
+  }
+  return xz;
+}
+
 /**
  * A catalog car turned into a normalized, part-based model.
  * Car space: forward +Z, up +Y, left +X, wheels on the ground at y = 0, centred on x/z.
@@ -85,7 +105,7 @@ export class CarModel {
     this.root.name = `car:${entry.id}`;
     /** @type {Array<object>} parts from buildParts + {object: THREE.Group, assembled: {position, quaternion}} */
     this.parts = [];
-    /** Wheel parts ordered FL, FR, RL, RR. */
+    /** Wheel parts ordered FL, FR, RL, RR; `object` steers (rotation.y), `hub` spins (rotation.x). */
     this.wheels = [];
     this.paintMaterials = [];
     const holder = this.#normalize(source);
@@ -111,6 +131,7 @@ export class CarModel {
     for (const p of this.parts) {
       p.object.position.copy(p.assembled.position);
       p.object.quaternion.copy(p.assembled.quaternion);
+      p.hub?.rotation.set(0, 0, 0);
     }
   }
 
@@ -171,15 +192,50 @@ export class CarModel {
       this.root.add(group);
       group.updateMatrixWorld(true);
       for (const id of def.meshIds) group.attach(meshes[id].mesh);
+      const hub = def.kind === 'wheel' ? this.#rigWheel(group, def) : null;
       const part = {
         ...def,
         object: group,
+        hub,
         assembled: { position: group.position.clone(), quaternion: group.quaternion.clone() },
       };
       this.parts.push(part);
       if (def.kind === 'wheel') this.wheels.push(part);
     }
     holder.removeFromParent();
+  }
+
+  /**
+   * Straightens a wheel exported already steered, so it spins about X, and moves its spinning meshes onto a hub.
+   * Off-axle meshes (brake calipers) stay on `group`: they steer but do not spin. Updates `def.box`.
+   * @returns {THREE.Group} the hub
+   */
+  #rigWheel(group, def) {
+    const meshes = group.children.filter((o) => o.isMesh);
+    const yaw = bakedWheelYaw(wheelFootprint(meshes));
+    if (yaw) {
+      const q = new THREE.Quaternion().setFromAxisAngle(UP, -yaw);
+      for (const mesh of meshes) {
+        mesh.position.applyQuaternion(q);
+        mesh.quaternion.premultiply(q);
+        mesh.updateMatrix();
+      }
+    }
+    const hub = new THREE.Group();
+    hub.name = `${def.id}-hub`;
+    group.add(hub);
+    group.updateMatrixWorld(true);
+    // The root is still at the origin and `group` is unrotated, so car space minus the pivot is wheel space.
+    const box = new THREE.Box3();
+    for (const mesh of meshes) {
+      box.setFromObject(mesh, true);
+      box.min.sub(group.position);
+      box.max.sub(group.position);
+      if (spinsWithWheel({ min: box.min.toArray(), max: box.max.toArray() }, def.radius)) hub.attach(mesh);
+    }
+    const bounds = new THREE.Box3().setFromObject(group, true);
+    def.box = { min: bounds.min.toArray(), max: bounds.max.toArray() };
+    return hub;
   }
 
   #prepareMaterials() {

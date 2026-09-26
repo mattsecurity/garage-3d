@@ -91,4 +91,56 @@ describe('CarModel', () => {
     expect(f1.wheels[1].object.position.x).toBeCloseTo(-0.9, 2);
     expect(f1.paintable).toBe(false);
   });
+
+  // Like the Nissan GT-R file: front wheels exported already steered, calipers inside the wheel node.
+  function steeredScene() {
+    const scene = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.8, 4.5), new THREE.MeshStandardMaterial({ name: 'Body' }));
+    body.position.y = 0.8;
+    scene.add(body);
+    const black = new THREE.MeshStandardMaterial({ name: 'Tyre' });
+    const red = new THREE.MeshStandardMaterial({ name: 'Caliper' });
+    for (const [name, x, z, yaw] of [
+      ['wheel_fl', 0.85, 1.4, 0.5],
+      ['wheel_fr', -0.85, 1.4, 0.5],
+      ['wheel_rl', 0.85, -1.4, 0],
+      ['wheel_rr', -0.85, -1.4, 0],
+    ]) {
+      const wheel = new THREE.Group();
+      wheel.name = name;
+      wheel.position.set(x, 0.35, z);
+      wheel.rotation.y = yaw;
+      const tyre = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.25, 24).rotateZ(Math.PI / 2), black);
+      tyre.name = `${name}_tyre`;
+      const caliper = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.3, 0.12), red);
+      caliper.name = `${name}_caliper`;
+      caliper.position.set(-Math.sign(x) * 0.05, 0, -0.17);
+      wheel.add(tyre, caliper);
+      scene.add(wheel);
+    }
+    return scene;
+  }
+  const steered = new CarModel({ id: 'steered', forward: '+z', length: 4.5, wheelPattern: /^wheel_/i, paintPattern: null }, steeredScene());
+  const meshNamed = (name) => steered.root.getObjectByName(name);
+
+  it('straightens front wheels that were exported already steered', () => {
+    const width = (name) => new THREE.Box3().setFromObject(meshNamed(name), true).getSize(new THREE.Vector3()).x;
+    expect(width('wheel_fl_tyre')).toBeCloseTo(width('wheel_rl_tyre'), 2);
+    expect(width('wheel_fl_tyre')).toBeLessThan(0.3);
+    expect(steered.wheels[0].box.max[0] - steered.wheels[0].box.min[0]).toBeLessThan(0.3);
+  });
+
+  it('spins tyres on a hub but leaves calipers on the steering knuckle', () => {
+    for (const wheel of steered.wheels) {
+      expect(meshNamed(`wheel_${wheel.wheel}_tyre`).parent).toBe(wheel.hub);
+      expect(meshNamed(`wheel_${wheel.wheel}_caliper`).parent).toBe(wheel.object);
+      expect(wheel.hub.parent).toBe(wheel.object);
+    }
+  });
+
+  it('resetParts also stops the wheel hubs', () => {
+    steered.wheels[0].hub.rotation.x = 2;
+    steered.resetParts();
+    expect(steered.wheels[0].hub.rotation.x).toBe(0);
+  });
 });

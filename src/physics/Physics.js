@@ -218,7 +218,7 @@ export class Physics {
         const length = this.vehicle.wheelSuspensionLength(i) ?? VEHICLE.suspensionRest;
         wheel.object.position.set(wheel.pivot[0], mount.y - length, wheel.pivot[2]);
         wheel.object.rotation.y = this.vehicle.wheelSteering(i) ?? 0;
-        wheel.object.rotation.x = this.vehicle.wheelRotation(i) ?? 0;
+        (wheel.hub ?? wheel.object).rotation.x = this.vehicle.wheelRotation(i) ?? 0;
       });
     }
     for (const prop of this.props) {
