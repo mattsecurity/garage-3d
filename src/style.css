@@ -1,10 +1,33 @@
+/* HUD theme. The --hud-* tokens are shared with other HUD panels; body.stage-studio switches them to dark.
+   --hud-glass is for small controls over the scene, --hud-surface for panels with running text. */
 :root {
-  --ink: #111;
-  --tag-bg: #1d1d1d;
-  --tag-fg: #f2f2f2;
-  --muted: rgba(0, 0, 0, 0.45);
-  --edge: 16px;
-  font-family: 'DM Mono', ui-monospace, Menlo, monospace;
+  --hud-font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --hud-fg: #111114;
+  --hud-muted: rgba(17, 17, 20, 0.55);
+  --hud-glass: rgba(255, 255, 255, 0.62);
+  --hud-glass-strong: rgba(255, 255, 255, 0.95);
+  --hud-surface: rgba(255, 255, 255, 0.88);
+  --hud-border: rgba(17, 17, 20, 0.08);
+  --hud-shadow: 0 10px 30px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --hud-blur: saturate(180%) blur(20px);
+  --hud-radius: 999px;
+  --hud-radius-card: 18px;
+  --hud-edge: 20px;
+  --hud-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --hud-focus: #0a84ff;
+  font-family: var(--hud-font);
+  -webkit-font-smoothing: antialiased;
+}
+
+body.stage-studio {
+  --hud-fg: #f5f5f7;
+  --hud-muted: rgba(245, 245, 247, 0.6);
+  --hud-glass: rgba(44, 44, 48, 0.5);
+  --hud-glass-strong: rgba(255, 255, 255, 0.16);
+  --hud-surface: rgba(30, 30, 34, 0.88);
+  --hud-border: rgba(255, 255, 255, 0.1);
+  --hud-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  background: #000;
 }
 
 * {
@@ -17,7 +40,7 @@ body {
   height: 100%;
   overflow: hidden;
   background: #e9e9e9;
-  color: var(--ink);
+  color: var(--hud-fg);
   overscroll-behavior: none;
   -webkit-user-select: none;
   user-select: none;
@@ -25,8 +48,27 @@ body {
 
 button {
   font: inherit;
+  color: inherit;
+  background: none;
   border: 0;
+  padding: 0;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--hud-focus);
+  outline-offset: 2px;
+}
+
+svg {
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 #webgl {
@@ -39,66 +81,218 @@ button {
   outline: none;
 }
 
-/* Labels in dark boxes, like the reference demo */
-.tag {
-  display: inline-block;
-  background: var(--tag-bg);
-  color: var(--tag-fg);
-  font-size: 11px;
-  letter-spacing: 0.22em;
-  padding: 5px 7px 4px;
-  line-height: 1.2;
+/* Frosted glass surface */
+.glass {
+  background: var(--hud-glass);
+  -webkit-backdrop-filter: var(--hud-blur);
+  backdrop-filter: var(--hud-blur);
+  border: 1px solid var(--hud-border);
+  box-shadow: var(--hud-shadow);
+  transition:
+    background-color 0.4s,
+    border-color 0.4s,
+    box-shadow 0.4s;
 }
 
-.logo {
-  font-size: 15px;
-  letter-spacing: 0.02em;
-  font-weight: 500;
-  padding: 5px 6px;
-}
-
+/* Title block, top left */
 #info {
   position: fixed;
-  top: var(--edge);
-  left: var(--edge);
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
+  top: calc(var(--hud-edge) + env(safe-area-inset-top));
+  left: calc(var(--hud-edge) + env(safe-area-inset-left));
   z-index: 5;
-  max-width: calc(100vw - 2 * var(--edge));
+  max-width: calc(100vw - 2 * var(--hud-edge) - 48px);
+  color: var(--hud-fg);
+  transition: color 0.4s;
 }
 
-#info .row {
+.overline {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--hud-muted);
+}
+
+#car-name {
+  margin: 4px 0 10px;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+  min-height: 1.1em;
+}
+
+.car-meta {
   display: flex;
-  gap: 2px;
+  align-items: center;
+  gap: 12px;
 }
 
-.btn:hover {
-  background: #3a3a3a;
+#car-year {
+  font-size: 15px;
+  color: var(--hud-muted);
+  font-variant-numeric: tabular-nums;
 }
 
+.stepper {
+  display: flex;
+  align-items: center;
+  padding: 3px;
+  border-radius: var(--hud-radius);
+}
+
+.count {
+  min-width: 52px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.icon-btn {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.icon-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.icon-btn:hover,
+.round:hover {
+  background: var(--hud-glass-strong);
+}
+
+/* Info button and credits card, top right */
+.round {
+  position: fixed;
+  top: calc(var(--hud-edge) + env(safe-area-inset-top));
+  right: calc(var(--hud-edge) + env(safe-area-inset-right));
+  z-index: 6;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--hud-fg);
+}
+
+.round svg {
+  width: 20px;
+  height: 20px;
+}
+
+.card {
+  position: fixed;
+  top: calc(var(--hud-edge) + env(safe-area-inset-top) + 48px);
+  right: calc(var(--hud-edge) + env(safe-area-inset-right));
+  z-index: 6;
+  width: min(300px, calc(100vw - 2 * var(--hud-edge)));
+  padding: 16px 18px;
+  border-radius: var(--hud-radius-card);
+  background: var(--hud-surface);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--hud-fg);
+  -webkit-user-select: text;
+  user-select: text;
+  transform-origin: top right;
+  animation: pop 0.25s var(--hud-ease);
+}
+
+.card[hidden] {
+  display: none;
+}
+
+.card h2 {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--hud-muted);
+}
+
+.card p {
+  margin: 0 0 6px;
+}
+
+.card p:last-child {
+  margin-bottom: 0;
+}
+
+.card .muted {
+  color: var(--hud-muted);
+  font-size: 12px;
+}
+
+.card a {
+  color: inherit;
+  text-decoration-color: var(--hud-muted);
+  text-underline-offset: 2px;
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+}
+
+/* Mode switcher, bottom centre */
 #modes {
   position: fixed;
   left: 50%;
-  bottom: calc(var(--edge) + env(safe-area-inset-bottom));
+  bottom: calc(var(--hud-edge) + env(safe-area-inset-bottom));
   transform: translateX(-50%);
-  display: flex;
-  gap: 2px;
   z-index: 5;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  padding: 4px;
+  border-radius: var(--hud-radius);
+  --active: 0;
+}
+
+.mode-indicator {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc((100% - 8px) / 3);
+  border-radius: var(--hud-radius);
+  background: var(--hud-glass-strong);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  transform: translateX(calc(var(--active) * 100%));
+  transition:
+    transform 0.35s var(--hud-ease),
+    opacity 0.2s,
+    background-color 0.4s;
+  opacity: 0;
+}
+
+#modes.has-active .mode-indicator {
+  opacity: 1;
 }
 
 .mode-btn {
-  background: rgba(29, 29, 29, 0.55);
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 11px;
-  letter-spacing: 0.22em;
-  padding: 6px 5px 5px;
+  position: relative;
+  min-width: 88px;
+  padding: 9px 20px;
+  border-radius: var(--hud-radius);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--hud-muted);
+  transition: color 0.2s;
 }
 
+.mode-btn:hover,
 .mode-btn.active {
-  background: var(--tag-bg);
-  color: #fff;
+  color: var(--hud-fg);
 }
 
 .mode-btn:disabled {
@@ -106,19 +300,75 @@ button {
   cursor: default;
 }
 
-.mode-btn .br {
-  opacity: 0.6;
+/* Hint row, above the mode switcher */
+#hint {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--hud-edge) + env(safe-area-inset-bottom) + 64px);
+  transform: translate(-50%, 6px);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 8px 16px;
+  border-radius: var(--hud-radius);
+  font-size: 12px;
+  color: var(--hud-fg);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.6s,
+    transform 0.6s var(--hud-ease),
+    background-color 0.4s;
 }
 
+#hint.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+#hint:empty {
+  display: none;
+}
+
+.hint-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+kbd {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 6px;
+  border: 1px solid var(--hud-border);
+  background: var(--hud-glass-strong);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--hud-fg);
+}
+
+kbd + .hint-label {
+  margin-left: 4px;
+}
+
+/* Colour palette, right */
 #palette {
   position: fixed;
-  right: var(--edge);
+  right: calc(var(--hud-edge) + env(safe-area-inset-right));
   top: 50%;
   transform: translateY(-50%);
+  z-index: 5;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  z-index: 5;
+  gap: 12px;
+  padding: 10px;
+  border-radius: var(--hud-radius);
 }
 
 #palette[hidden] {
@@ -126,15 +376,19 @@ button {
 }
 
 .swatch {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  padding: 0;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+  transition: transform 0.2s var(--hud-ease);
+}
+
+.swatch:hover {
+  transform: scale(1.12);
 }
 
 .swatch.active {
-  outline: 1px solid #fff;
+  outline: 2px solid var(--hud-fg);
   outline-offset: 3px;
 }
 
@@ -142,23 +396,7 @@ button {
   background: conic-gradient(#b5121b, #f2b705, #123a8c, #b5121b);
 }
 
-#credits {
-  position: fixed;
-  right: var(--edge);
-  bottom: calc(var(--edge) + env(safe-area-inset-bottom));
-  max-width: min(360px, 34vw);
-  text-align: right;
-  font-size: 9px;
-  letter-spacing: 0.1em;
-  line-height: 1.5;
-  color: var(--muted);
-  z-index: 5;
-}
-
-#credits a {
-  color: inherit;
-}
-
+/* Full-screen layers */
 #curtain {
   position: fixed;
   inset: 0;
@@ -176,11 +414,9 @@ button {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  background: #000;
-  color: #fff;
-  font-size: 11px;
-  letter-spacing: 0.45em;
+  gap: 14px;
+  background: #0b0b0c;
+  color: #f5f5f7;
   z-index: 10;
   transition:
     opacity 0.5s,
@@ -188,7 +424,9 @@ button {
 }
 
 #loading.overlay {
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(10, 10, 12, 0.5);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
 }
 
 #loading.hidden {
@@ -196,10 +434,19 @@ button {
   visibility: hidden;
 }
 
+.loading-name {
+  min-height: 1.2em;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
 .loading-bar {
-  width: 120px;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.2);
+  width: 160px;
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.15);
+  overflow: hidden;
 }
 
 .loading-fill {
@@ -209,32 +456,49 @@ button {
   transition: width 0.2s;
 }
 
-.loading-name {
-  font-size: 10px;
-  letter-spacing: 0.25em;
-  opacity: 0.7;
-  min-height: 1em;
+.loading-pct {
+  min-height: 1.2em;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: rgba(245, 245, 247, 0.55);
 }
 
 #toast {
   position: fixed;
-  top: var(--edge);
+  top: calc(var(--hud-edge) + env(safe-area-inset-top));
   left: 50%;
-  transform: translateX(-50%);
-  background: #b3261e;
-  color: #fff;
-  font-size: 11px;
-  letter-spacing: 0.15em;
-  padding: 7px 10px;
+  transform: translate(-50%, -8px);
   z-index: 11;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100vw - 2 * var(--hud-edge));
+  padding: 10px 16px;
+  border-radius: var(--hud-radius);
+  background: rgba(24, 24, 27, 0.85);
+  -webkit-backdrop-filter: var(--hud-blur);
+  backdrop-filter: var(--hud-blur);
+  color: #f5f5f7;
+  font-size: 13px;
   opacity: 0;
-  transition: opacity 0.3s;
   pointer-events: none;
-  max-width: calc(100vw - 2 * var(--edge));
+  transition:
+    opacity 0.3s,
+    transform 0.3s var(--hud-ease);
+}
+
+#toast::before {
+  content: '';
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff453a;
 }
 
 #toast.show {
   opacity: 1;
+  transform: translate(-50%, 0);
 }
 
 #fatal {
@@ -245,11 +509,10 @@ button {
   justify-content: center;
   padding: 24px;
   text-align: center;
-  background: #000;
-  color: #fff;
-  font-size: 12px;
-  letter-spacing: 0.2em;
-  line-height: 1.8;
+  background: #0b0b0c;
+  color: #f5f5f7;
+  font-size: 15px;
+  line-height: 1.6;
   z-index: 20;
 }
 
@@ -257,10 +520,11 @@ button {
   display: none;
 }
 
+/* Touch joystick */
 #joystick {
   position: fixed;
   left: 24px;
-  bottom: calc(80px + env(safe-area-inset-bottom));
+  bottom: calc(96px + env(safe-area-inset-bottom));
   z-index: 6;
   display: none;
 }
@@ -271,11 +535,14 @@ button {
 
 .joystick-base {
   position: relative;
-  width: 120px;
-  height: 120px;
+  width: 124px;
+  height: 124px;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.12);
-  border: 1px solid rgba(0, 0, 0, 0.25);
+  background: var(--hud-glass);
+  -webkit-backdrop-filter: var(--hud-blur);
+  backdrop-filter: var(--hud-blur);
+  border: 1px solid var(--hud-border);
+  box-shadow: var(--hud-shadow);
   touch-action: none;
 }
 
@@ -283,49 +550,46 @@ button {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 48px;
-  height: 48px;
-  margin: -24px 0 0 -24px;
+  width: 52px;
+  height: 52px;
+  margin: -26px 0 0 -26px;
   border-radius: 50%;
-  background: rgba(29, 29, 29, 0.8);
+  background: var(--hud-glass-strong);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   pointer-events: none;
 }
 
-/* Studio stage: plain light text on black */
-body.stage-studio {
-  background: #000;
-}
-
-body.stage-studio .tag {
-  background: transparent;
-  color: #eaeaea;
-  padding-left: 0;
-}
-
-body.stage-studio .mode-btn {
-  background: transparent;
-  color: rgba(255, 255, 255, 0.45);
-}
-
-body.stage-studio .mode-btn.active {
-  color: #fff;
-}
-
-body.stage-studio #credits {
-  color: rgba(255, 255, 255, 0.4);
-}
-
 @media (max-width: 640px) {
-  #credits {
-    left: var(--edge);
-    right: var(--edge);
-    bottom: calc(52px + env(safe-area-inset-bottom));
-    max-width: none;
-    text-align: center;
-    font-size: 8px;
+  :root {
+    --hud-edge: 14px;
   }
 
-  #joystick {
-    bottom: calc(96px + env(safe-area-inset-bottom));
+  #car-name {
+    font-size: 21px;
+    margin-bottom: 8px;
+  }
+
+  #modes {
+    left: var(--hud-edge);
+    right: var(--hud-edge);
+    transform: none;
+  }
+
+  .mode-btn {
+    min-width: 0;
+    padding: 10px 0;
+  }
+
+  #hint {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0s !important;
+    animation: none !important;
   }
 }

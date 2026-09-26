@@ -43,8 +43,9 @@ The footer credit line is removed.
 
 ## Mobile (< 640 px)
 
-Smaller title; segmented control spans the width minus the edges; hints hidden on touch except the
-joystick hint; info card fits the screen width.
+Smaller title; segmented control spans the width minus the edges; hint row hidden (the joystick
+explains itself, and the space above the mode bar goes to the wind-tunnel sheet); info card fits the
+screen width.
 
 ## Accessibility
 

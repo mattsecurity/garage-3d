@@ -7,40 +7,53 @@
     <meta name="description" content="Modellini 3D di auto sportive reali: montali, guidali, guardali in studio." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   </head>
   <body>
     <canvas id="webgl"></canvas>
     <div id="curtain"></div>
 
     <header id="info">
-      <div class="tag logo">GARAGE</div>
-      <div class="tag" id="car-title">[01]</div>
-      <div class="tag" id="hint"></div>
-      <div class="row">
-        <button class="tag btn" id="prev-car" type="button">&lt;Prev</button>
-        <button class="tag btn" id="next-car" type="button">Next&gt;</button>
+      <div class="overline">Garage</div>
+      <h1 id="car-name"></h1>
+      <div class="car-meta">
+        <span id="car-year"></span>
+        <div class="stepper glass" role="group" aria-label="Cambia auto">
+          <button class="icon-btn" id="prev-car" type="button" aria-label="Auto precedente">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6" /></svg>
+          </button>
+          <span class="count" id="car-count"></span>
+          <button class="icon-btn" id="next-car" type="button" aria-label="Auto successiva">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6" /></svg>
+          </button>
+        </div>
       </div>
     </header>
 
-    <div id="palette" hidden></div>
+    <button class="glass round" id="info-btn" type="button" aria-label="Crediti" aria-expanded="false" aria-controls="credits">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 11v5.5M12 7.6v.1" /></svg>
+    </button>
+    <section class="glass card" id="credits" aria-label="Crediti" hidden></section>
 
-    <nav id="modes" aria-label="Modalità">
-      <button class="mode-btn" data-mode="kit" type="button"><span class="br">[</span>Kit<span class="br">]</span></button>
-      <button class="mode-btn" data-mode="drive" type="button"><span class="br">[</span>Drive<span class="br">]</span></button>
-      <button class="mode-btn" data-mode="studio" type="button"><span class="br">[</span>Studio<span class="br">]</span></button>
+    <div class="glass" id="palette" hidden></div>
+
+    <div class="glass" id="hint" aria-live="polite"></div>
+
+    <nav class="glass" id="modes" aria-label="Modalità">
+      <span class="mode-indicator" aria-hidden="true"></span>
+      <button class="mode-btn" data-mode="kit" type="button">Kit</button>
+      <button class="mode-btn" data-mode="drive" type="button">Drive</button>
+      <button class="mode-btn" data-mode="studio" type="button">Studio</button>
     </nav>
-
-    <footer id="credits"></footer>
 
     <div id="joystick">
       <div class="joystick-base"><div class="joystick-knob"></div></div>
     </div>
 
     <div id="loading">
-      <div class="loading-label">LOADING</div>
-      <div class="loading-bar"><div class="loading-fill"></div></div>
       <div class="loading-name"></div>
+      <div class="loading-bar"><div class="loading-fill"></div></div>
+      <div class="loading-pct"></div>
     </div>
     <div id="toast" role="status"></div>
     <div id="fatal" hidden></div>

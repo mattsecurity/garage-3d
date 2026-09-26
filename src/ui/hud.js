@@ -1,3 +1,5 @@
+import { CARS } from '../cars/catalog.js';
+
 const $ = (id) => document.getElementById(id);
 
 export const PALETTE = [
@@ -11,48 +13,86 @@ export const PALETTE = [
   { name: 'Bianco', color: '#f2f2f2' },
 ];
 
+/** Hint row per mode: each item shows its `keys` as key caps, then its label. */
 const HINTS = {
-  kit: 'Trascina per ruotare · [Drive] monta il kit',
-  drive: 'WASD / Frecce per guidare · Spazio freno a mano · R raddrizza',
-  driveTouch: 'Joystick per guidare',
-  studio: 'Trascina per ruotare la vista',
+  kit: [{ label: 'Trascina per ruotare' }, { label: 'Drive monta il kit' }],
+  drive: [
+    { keys: ['W', 'A', 'S', 'D'], label: 'Guida' },
+    { keys: ['Spazio'], label: 'Freno a mano' },
+    { keys: ['R'], label: 'Raddrizza' },
+  ],
+  driveTouch: [{ label: 'Usa il joystick per guidare' }],
+  studio: [{ label: 'Trascina per ruotare la vista' }],
 };
+const HINT_SECONDS = 6;
 
-/** All DOM overlay: title, hints, mode bar, colour palette, credits, loading screen, errors. */
+const pad2 = (n) => String(n).padStart(2, '0');
+
+function element(tag, className, ...children) {
+  const el = document.createElement(tag);
+  if (className) el.className = className;
+  el.append(...children);
+  return el;
+}
+
+function link(href, text) {
+  const a = element('a', '', text);
+  a.href = href;
+  a.target = '_blank';
+  a.rel = 'noopener';
+  return a;
+}
+
+/** Buttons drop focus after a click, so Space and the arrow keys keep driving the car. */
+function onClick(button, handler) {
+  button.addEventListener('click', (e) => {
+    handler(e);
+    e.currentTarget.blur();
+  });
+}
+
+/** All DOM overlay: title, hints, mode switcher, colour palette, credits card, loading screen, errors. */
 export class Hud {
   /** @param {{onMode:(m:string)=>void, onPrev:()=>void, onNext:()=>void, onPaint:(c:string|null)=>void}} handlers */
   constructor({ onMode, onPrev, onNext, onPaint }) {
-    this.modeButtons = [...document.querySelectorAll('.mode-btn')];
-    for (const b of this.modeButtons)
-      b.addEventListener('click', (e) => {
-        onMode(b.dataset.mode);
-        e.currentTarget.blur();
-      });
-    $('prev-car').addEventListener('click', (e) => {
-      onPrev();
-      e.currentTarget.blur();
-    });
-    $('next-car').addEventListener('click', (e) => {
-      onNext();
-      e.currentTarget.blur();
-    });
+    this.modes = $('modes');
+    this.modeButtons = [...this.modes.querySelectorAll('.mode-btn')];
+    for (const b of this.modeButtons) onClick(b, () => onMode(b.dataset.mode));
+    onClick($('prev-car'), onPrev);
+    onClick($('next-car'), onNext);
     this.palette = $('palette');
     this.swatches = PALETTE.map((p, i) => {
-      const b = document.createElement('button');
+      const b = element('button', p.color ? 'swatch' : 'swatch original');
       b.type = 'button';
-      b.className = p.color ? 'swatch' : 'swatch original';
       b.title = p.name;
       b.setAttribute('aria-label', p.name);
       if (p.color) b.style.background = p.color;
-      b.addEventListener('click', (e) => {
+      onClick(b, () => {
         this.setActiveSwatch(i);
         onPaint(p.color);
-        e.currentTarget.blur();
       });
       this.palette.append(b);
       return b;
     });
+    this.#setupCredits();
+    this.hintTimer = 0;
     this.toastTimer = 0;
+  }
+
+  #setupCredits() {
+    const button = $('info-btn');
+    const card = $('credits');
+    const setOpen = (open) => {
+      card.hidden = !open;
+      button.setAttribute('aria-expanded', String(open));
+    };
+    onClick(button, () => setOpen(card.hidden));
+    document.addEventListener('pointerdown', (e) => {
+      if (!card.hidden && !card.contains(e.target) && !button.contains(e.target)) setOpen(false);
+    });
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') setOpen(false);
+    });
   }
 
   setAvailableModes(names) {
@@ -60,13 +100,27 @@ export class Hud {
   }
 
   setMode(name) {
-    for (const b of this.modeButtons) {
-      const on = b.dataset.mode === name;
-      b.classList.toggle('active', on);
-      b.setAttribute('aria-pressed', String(on));
-    }
+    const index = this.modeButtons.findIndex((b) => b.dataset.mode === name);
+    this.modeButtons.forEach((b, i) => {
+      b.classList.toggle('active', i === index);
+      b.setAttribute('aria-pressed', String(i === index));
+    });
+    this.modes.style.setProperty('--active', String(Math.max(index, 0)));
+    this.modes.classList.toggle('has-active', index >= 0);
     const touch = window.matchMedia('(pointer: coarse)').matches;
-    $('hint').textContent = (name === 'drive' && touch ? HINTS.driveTouch : HINTS[name]) ?? '';
+    this.#showHint((name === 'drive' && touch ? HINTS.driveTouch : HINTS[name]) ?? []);
+  }
+
+  #showHint(items) {
+    const el = $('hint');
+    el.replaceChildren(
+      ...items.map(({ keys = [], label }) =>
+        element('span', 'hint-item', ...keys.map((k) => element('kbd', '', k)), element('span', 'hint-label', label)),
+      ),
+    );
+    el.classList.toggle('show', items.length > 0);
+    clearTimeout(this.hintTimer);
+    this.hintTimer = setTimeout(() => el.classList.remove('show'), HINT_SECONDS * 1000);
   }
 
   setStage(stage) {
@@ -74,20 +128,22 @@ export class Hud {
   }
 
   setCar(index, entry) {
-    $('car-title').textContent = `[${String(index + 1).padStart(2, '0')}] ${entry.name} · ${entry.year}`;
+    $('car-name').textContent = entry.name;
+    $('car-year').textContent = String(entry.year);
+    $('car-count').textContent = `${pad2(index + 1)} / ${pad2(CARS.length)}`;
   }
 
   setCredits(credit) {
-    const link = (href, text) => {
-      const a = document.createElement('a');
-      a.href = href;
-      a.target = '_blank';
-      a.rel = 'noopener';
-      a.textContent = text;
-      return a;
-    };
-    const license = credit.licenseUrl ? link(credit.licenseUrl, credit.license) : credit.license;
-    $('credits').replaceChildren('Modello 3D ', link(credit.url, `"${credit.title}"`), ` di ${credit.author} · `, license, ' · modificato (ricompresso)');
+    // An unverified licence is a sentence ("licenza originale non verificata"), not a licence name.
+    const license = credit.licenseUrl
+      ? ['Licenza ', link(credit.licenseUrl, credit.license)]
+      : [credit.license.charAt(0).toUpperCase() + credit.license.slice(1)];
+    $('credits').replaceChildren(
+      element('h2', '', 'Modello 3D'),
+      element('p', '', link(credit.url, `“${credit.title}”`), ` di ${credit.author}`),
+      element('p', 'muted', ...license, ' · modificato (ricompresso)'),
+      element('p', 'muted', 'Nomi e marchi delle auto appartengono ai rispettivi produttori.'),
+    );
   }
 
   showPalette(visible) {
@@ -101,9 +157,11 @@ export class Hud {
   /** @param {boolean} visible @param {number} progress 0..1 @param {boolean} overlay translucent (car switch) */
   setLoading(visible, progress = 0, name = '', overlay = false) {
     const el = $('loading');
+    const percent = Math.round(progress * 100);
     el.classList.toggle('hidden', !visible);
     el.classList.toggle('overlay', overlay);
-    el.querySelector('.loading-fill').style.width = `${Math.round(progress * 100)}%`;
+    el.querySelector('.loading-fill').style.width = `${percent}%`;
+    el.querySelector('.loading-pct').textContent = `${percent}%`;
     el.querySelector('.loading-name').textContent = name;
   }
 
