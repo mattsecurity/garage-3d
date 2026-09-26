@@ -6,6 +6,7 @@ import { createEnvironment, createRenderer, onResize } from './core/renderer.js'
 import { CARS } from './cars/catalog.js';
 import { loadCar } from './cars/garage.js';
 import { Desk } from './world/Desk.js';
+import { Studio } from './world/Studio.js';
 import { Effects } from './world/Effects.js';
 import { Kit } from './kit/Kit.js';
 import { Keyboard } from './input/controls.js';
@@ -15,8 +16,10 @@ import { createCurtain } from './ui/curtain.js';
 import { HOME_ROTATION } from './core/camera.js';
 import { KitMode } from './modes/KitMode.js';
 import { DriveMode } from './modes/DriveMode.js';
+import { StudioMode } from './modes/StudioMode.js';
 
 const DESK_BG = 0xe9e9e9;
+const STUDIO_BG = 0x000000;
 
 let ctx = null;
 let modes = {};
@@ -45,6 +48,7 @@ async function setMode(name) {
     hud.toast(err.userMessage ?? 'Modalità non disponibile');
     mode = modes.kit;
     hud.setMode('kit');
+    await ctx.setStage('desk');
     await mode.enter(null);
   } finally {
     busy = false;
@@ -84,8 +88,9 @@ async function setCar(index, { initial = false } = {}) {
 async function boot() {
   const renderer = createRenderer(document.getElementById('webgl'));
   const scene = new THREE.Scene();
+  const deskFog = new THREE.Fog(DESK_BG, 32, 80);
   scene.background = new THREE.Color(DESK_BG);
-  scene.fog = new THREE.Fog(DESK_BG, 32, 80);
+  scene.fog = deskFog;
   scene.environment = createEnvironment(renderer);
   const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 250);
   const controls = new OrbitControls(camera, renderer.domElement);
@@ -93,7 +98,8 @@ async function boot() {
   controls.enabled = false;
 
   const desk = new Desk();
-  scene.add(desk.group);
+  const studio = new Studio();
+  scene.add(desk.group, studio.group);
   const effects = new Effects(scene);
 
   ctx = {
@@ -102,6 +108,7 @@ async function boot() {
     camera,
     controls,
     desk,
+    studio,
     effects,
     hud,
     kit: new Kit(),
@@ -110,8 +117,27 @@ async function boot() {
     curtain: createCurtain(document.getElementById('curtain')),
     physics: null,
     car: null,
+    stage: 'desk',
+    /** Swaps desk ↔ studio behind a black curtain; `whileHidden` runs while the screen is black. */
+    async setStage(stage, whileHidden) {
+      if (ctx.stage === stage) {
+        whileHidden?.();
+        return;
+      }
+      await ctx.curtain.close();
+      const inStudio = stage === 'studio';
+      desk.group.visible = !inStudio;
+      studio.group.visible = inStudio;
+      scene.background.set(inStudio ? STUDIO_BG : DESK_BG);
+      scene.fog = inStudio ? null : deskFog;
+      scene.environmentIntensity = inStudio ? 0.35 : 1;
+      ctx.stage = stage;
+      hud.setStage(stage);
+      whileHidden?.();
+      await ctx.curtain.open();
+    },
   };
-  modes = { kit: new KitMode(ctx), drive: new DriveMode(ctx) };
+  modes = { kit: new KitMode(ctx), drive: new DriveMode(ctx), studio: new StudioMode(ctx) };
   hud.setAvailableModes(Object.keys(modes));
 
   const viewport = () => effects.setViewport(renderer.domElement.height, camera.fov);
