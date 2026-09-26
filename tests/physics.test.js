@@ -160,6 +160,22 @@ describe('Physics props', () => {
     expect(pencil.position.distanceTo(before)).toBeGreaterThan(0.1);
   });
 
+  it('reports an impact with the prop\'s material when the car hits it', async () => {
+    const physics = await Physics.create();
+    const jar = fakeProp(new THREE.CylinderGeometry(0.4, 0.4, 0.5, 24), 0.25, 0, 5, { mass: 30, sound: 'tin' });
+    physics.addProps([jar]);
+    physics.setCar(fakeCar());
+    run(physics, 0.5, idle);
+    physics.takeImpacts(); // settling
+    run(physics, 2, { ...idle, throttle: 1 });
+    const hits = physics.takeImpacts();
+    const tin = hits.find((h) => h.material === 'tin');
+    expect(tin).toBeTruthy();
+    expect(tin.speed).toBeGreaterThan(3);
+    expect(hits.some((h) => h.material === 'body')).toBe(true);
+    expect(physics.takeImpacts()).toEqual([]);
+  });
+
   it('resetProps puts every prop back', async () => {
     const physics = await Physics.create();
     const box = fakeProp(new THREE.BoxGeometry(0.6, 0.6, 0.6), 0.3, 0, 5, { mass: 20 });

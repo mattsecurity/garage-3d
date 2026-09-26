@@ -1,6 +1,7 @@
 // Procedural desk props. Each builder returns a Group resting on y = 0 with its long side along X.
-// userData.collider makes it a dynamic body in Drive: {mass, friction, restitution, hull}. Physics wraps each mesh in a
-// convex hull (hull: 'merged' = one hull around all of them). Masses are relative to the 1200 of the car.
+// userData.collider makes it a dynamic body in Drive: {mass, friction, restitution, hull, sound}. Physics wraps each
+// mesh in a convex hull (hull: 'merged' = one hull around all of them). Masses are relative to the 1200 of the car.
+// sound: the material it rings like when hit (audio/impacts.js).
 import * as THREE from 'three';
 import { jarLabelTexture, rulerTexture } from './textures.js';
 
@@ -25,7 +26,7 @@ export function paintJar(lidColor) {
     mesh(new THREE.CylinderGeometry(r + 0.004, r + 0.004, h * 0.62, 40, 1, true), std({ map: jarLabelTexture(labelColor), roughness: 0.6 }), 0, h * 0.45),
     mesh(new THREE.CylinderGeometry(r * 0.97, r * 0.97, 0.06, 40), std({ color: lidColor, roughness: 0.35, metalness: 0.2 }), 0, h + 0.03),
   );
-  g.userData.collider = { mass: 30, friction: 0.35, restitution: 0.25, hull: 'merged' };
+  g.userData.collider = { mass: 30, friction: 0.35, restitution: 0.25, hull: 'merged', sound: 'tin' };
   return g;
 }
 
@@ -36,7 +37,7 @@ export function cutter() {
   for (let i = 0; i < 6; i++) g.add(mesh(new THREE.BoxGeometry(0.08, 0.05, 0.48), std({ color: 0x222222, roughness: 0.8 }), -1.2 + i * 0.22, 0.25));
   g.add(mesh(new THREE.BoxGeometry(0.9, 0.03, 0.3), metal(), 2.0, 0.12));
   g.add(mesh(new THREE.BoxGeometry(0.5, 0.1, 0.12), std({ color: 0x9aa0a6, metalness: 0.6, roughness: 0.4 }), 0.6, 0.27, 0));
-  g.userData.collider = { mass: 35, friction: 0.45, restitution: 0.2 };
+  g.userData.collider = { mass: 35, friction: 0.45, restitution: 0.2, sound: 'plastic' };
   return g;
 }
 
@@ -87,7 +88,7 @@ export function scissors() {
   g.add(half(-1, { cx: -0.92, cy: -0.4, rx: 0.48, ry: 0.3 }, 0.045, 0.15)); // finger loop, lower blade
   const screw = new THREE.SphereGeometry(0.1, 24, 8, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 0.35, 1);
   g.add(mesh(screw, steel, 0, 0.115)); // domed pivot screw
-  g.userData.collider = { mass: 45, friction: 0.35, restitution: 0.15 };
+  g.userData.collider = { mass: 45, friction: 0.35, restitution: 0.15, sound: 'steel' };
   return g;
 }
 
@@ -97,7 +98,7 @@ export function screwdriver() {
   const shaft = mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.9, 12).rotateZ(Math.PI / 2), metal(), 0.85, 0.26);
   const tip = mesh(new THREE.BoxGeometry(0.14, 0.03, 0.12), metal(), 1.85, 0.26);
   g.add(handle, shaft, tip);
-  g.userData.collider = { mass: 50, friction: 0.45, restitution: 0.2 };
+  g.userData.collider = { mass: 50, friction: 0.45, restitution: 0.2, sound: 'steel' };
   return g;
 }
 
@@ -108,7 +109,7 @@ export function ruler() {
   const side = metal();
   const top = std({ map: rulerTexture(length, width), metalness: 0.6, roughness: 0.35 });
   g.add(mesh(new THREE.BoxGeometry(length, 0.04, width), [side, side, top, side, side, side], 0, 0.02));
-  g.userData.collider = { mass: 60, friction: 0.3, restitution: 0.1 };
+  g.userData.collider = { mass: 60, friction: 0.3, restitution: 0.1, sound: 'steel' };
   return g;
 }
 
@@ -120,7 +121,7 @@ export function pencil() {
   const ferrule = mesh(new THREE.CylinderGeometry(0.135, 0.135, 0.25, 12).rotateZ(Math.PI / 2), metal(), -1.72, 0.13);
   const eraser = mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.18, 12).rotateZ(Math.PI / 2), std({ color: 0xe88a9a, roughness: 0.9 }), -1.93, 0.13);
   g.add(body, wood, lead, ferrule, eraser);
-  g.userData.collider = { mass: 5, friction: 0.5, restitution: 0.2, hull: 'merged' };
+  g.userData.collider = { mass: 5, friction: 0.5, restitution: 0.2, hull: 'merged', sound: 'wood' };
   return g;
 }
 
@@ -130,7 +131,7 @@ export function eraser() {
     mesh(new THREE.BoxGeometry(0.9, 0.28, 0.45), std({ color: 0xf4f4f4, roughness: 0.9 }), 0, 0.14),
     mesh(new THREE.BoxGeometry(0.5, 0.3, 0.47), std({ color: 0x123a8c, roughness: 0.7 }), 0.12, 0.14),
   );
-  g.userData.collider = { mass: 15, friction: 0.9, restitution: 0.45, hull: 'merged' };
+  g.userData.collider = { mass: 15, friction: 0.9, restitution: 0.45, hull: 'merged', sound: 'rubber' };
   return g;
 }
 
@@ -149,7 +150,7 @@ export function cone() {
     [0.47, 0.53],
   ])
     g.add(mesh(new THREE.CylinderGeometry(radiusAt(y1) + 0.004, radiusAt(y0) + 0.004, y1 - y0, 28, 1, true), white, 0, (y0 + y1) / 2));
-  g.userData.collider = { mass: 12, friction: 0.7, restitution: 0.3, hull: 'merged' };
+  g.userData.collider = { mass: 12, friction: 0.7, restitution: 0.3, hull: 'merged', sound: 'plastic' };
   return g;
 }
 
@@ -167,7 +168,7 @@ export function tapeRoll() {
     const ring = mesh(new THREE.RingGeometry(inner, outer, 48).rotateX(y ? -Math.PI / 2 : Math.PI / 2), std({ color: 0xd9c89c, roughness: 0.9 }), 0, y);
     g.add(ring);
   }
-  g.userData.collider = { mass: 40, friction: 0.6, restitution: 0.25, hull: 'merged' };
+  g.userData.collider = { mass: 40, friction: 0.6, restitution: 0.25, hull: 'merged', sound: 'card' };
   return g;
 }
 
@@ -181,7 +182,7 @@ export function glueBottle() {
     mesh(new THREE.CylinderGeometry(r + 0.004, r + 0.004, h * 0.5, 32, 1, true), std({ map: jarLabelTexture('#0f5132'), roughness: 0.5 }), 0, h * 0.45),
     mesh(new THREE.CylinderGeometry(r * 0.55, r * 0.6, 0.34, 24), std({ color: 0x1b1b1b, roughness: 0.4 }), 0, h + 0.17),
   );
-  g.userData.collider = { mass: 25, friction: 0.45, restitution: 0.2, hull: 'merged' };
+  g.userData.collider = { mass: 25, friction: 0.45, restitution: 0.2, hull: 'merged', sound: 'plastic' };
   return g;
 }
 
@@ -194,6 +195,6 @@ export function brush(handleColor = 0xb5121b) {
     mesh(new THREE.CylinderGeometry(0.08, 0.07, 0.45, 16).rotateZ(Math.PI / 2), metal(), 1.12, y),
     mesh(new THREE.ConeGeometry(0.07, 0.36, 16).rotateZ(-Math.PI / 2), std({ color: 0x3a2a1a, roughness: 0.9 }), 1.52, y),
   );
-  g.userData.collider = { mass: 6, friction: 0.5, restitution: 0.2 };
+  g.userData.collider = { mass: 6, friction: 0.5, restitution: 0.2, sound: 'wood' };
   return g;
 }

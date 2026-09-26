@@ -20,6 +20,7 @@ import { DriveMode } from './modes/DriveMode.js';
 import { StudioMode } from './modes/StudioMode.js';
 import { AudioEngine } from './audio/AudioEngine.js';
 import { CarSound } from './audio/CarSound.js';
+import { Impacts } from './audio/impacts.js';
 
 const DESK_BG = 0xe9e9e9;
 
@@ -30,7 +31,7 @@ let busy = false;
 let carIndex = 0;
 
 const audio = new AudioEngine();
-const sound = { audio, car: new CarSound(audio) };
+const sound = { audio, car: new CarSound(audio), impacts: new Impacts(audio) };
 
 const hud = new Hud({
   onMode: (name) => setMode(name),

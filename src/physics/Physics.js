@@ -5,6 +5,8 @@ import { VEHICLE, driveCommand } from './driving.js';
 const WORLD_HALF = { x: 52, z: 36 }; // invisible walls around the desk, far past the cutting mat (Desk.js MAT)
 const HULL_POINTS = 8000; // vertices sampled for the car's collision hull
 const MAX_KICK = 4; // largest speed change (units/s) a wheel can give a prop in one step
+const MIN_IMPACT = 1.2; // relative speed (units/s) below which a new contact makes no sound
+const IMPACT_GAP = 0.08; // s: one sound per body at most this often
 const _q = new THREE.Quaternion();
 const _v = new THREE.Vector3();
 const _n = new THREE.Vector3();
@@ -14,6 +16,7 @@ const _impulse = new THREE.Vector3();
 const _m = new THREE.Matrix4();
 const _inv = new THREE.Matrix4();
 const UP = new THREE.Vector3(0, 1, 0);
+const ZERO = { x: 0, y: 0, z: 0 };
 const hullCache = new WeakMap();
 
 /**
@@ -78,6 +81,10 @@ export class Physics {
     this.props = [];
     this.lastInput = { throttle: 0, steer: 0, handbrake: false };
     this.upsideDown = 0;
+    this.time = 0;
+    this.eventQueue = new RAPIER.EventQueue(true);
+    this.sounding = new Map(); // collider handle → {body, material, last}
+    this.impacts = [];
 
     this.ground = this.world.createCollider(RAPIER.ColliderDesc.cuboid(60, 0.5, 60).setTranslation(0, -0.5, 0).setFriction(1));
     const { x: W, z: D } = WORLD_HALF;
@@ -120,6 +127,7 @@ export class Physics {
         .map((points) => RAPIER.ColliderDesc.convexHull(points))
         .filter(Boolean)
         .map((desc) => this.world.createCollider(desc.setFriction(info.friction ?? 0.5).setRestitution(info.restitution ?? 0.2), body));
+      for (const c of colliders) this.#sound(c, body, info.sound ?? 'plastic');
       // Overlapping hulls (a label around a tin) count their volume twice: close enough for the mass split.
       const volume = colliders.reduce((v, c) => v + c.volume(), 0);
       for (const c of colliders) c.setDensity(info.mass / volume);
@@ -169,7 +177,7 @@ export class Physics {
     const shape =
       (hull && RAPIER.ColliderDesc.convexHull(hull)) ??
       RAPIER.ColliderDesc.cuboid(X * 0.42, halfHeight, Z * 0.46).setTranslation(0, bottom + halfHeight, 0);
-    this.world.createCollider(shape.setDensity(0).setFriction(0.3).setRestitution(0.1), this.body);
+    this.#sound(this.world.createCollider(shape.setDensity(0).setFriction(0.3).setRestitution(0.1), this.body), this.body, 'body');
 
     this.vehicle = this.world.createVehicleController(this.body);
     // Mount points sit higher by the static sag so the body rests at y = 0 with the tyres on the ground.
@@ -202,7 +210,10 @@ export class Physics {
 
   removeCar() {
     if (this.vehicle) this.world.removeVehicleController(this.vehicle);
-    if (this.body) this.world.removeRigidBody(this.body);
+    if (this.body) {
+      for (const [handle, entry] of this.sounding) if (entry.body === this.body) this.sounding.delete(handle);
+      this.world.removeRigidBody(this.body);
+    }
     this.vehicle = null;
     this.body = null;
     this.car = null;
@@ -282,7 +293,10 @@ export class Physics {
     }
     this.vehicle.updateVehicle(h);
     this.#pushGround(h);
-    this.world.step();
+    for (const entry of this.sounding.values()) entry.before = entry.body.linvel(); // approach speed for impacts
+    this.world.step(this.eventQueue);
+    this.time += h;
+    this.#collectImpacts();
 
     // Flip back automatically after lying on the roof/side for a while.
     const upright = _v.set(0, 1, 0).applyQuaternion(this.#rotation()).y;
@@ -314,6 +328,35 @@ export class Physics {
       if (_impulse.length() > max) _impulse.setLength(max);
       body.applyImpulseAtPoint(_impulse, this.vehicle.wheelContactPoint(i), true);
     }
+  }
+
+  /** Reports new contacts of `collider` as impacts made of `material` (see audio/impacts.js). */
+  #sound(collider, body, material) {
+    collider.setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS);
+    this.sounding.set(collider.handle, { body, material, last: -1, before: ZERO });
+  }
+
+  #collectImpacts() {
+    this.eventQueue.drainCollisionEvents((h1, h2, started) => {
+      if (!started) return;
+      const a = this.sounding.get(h1);
+      const b = this.sounding.get(h2);
+      const va = a?.before ?? ZERO;
+      const vb = b?.before ?? ZERO;
+      const speed = Math.hypot(va.x - vb.x, va.y - vb.y, va.z - vb.z);
+      if (speed < MIN_IMPACT) return;
+      for (const entry of [a, b]) {
+        if (!entry || this.time - entry.last < IMPACT_GAP) continue;
+        entry.last = this.time;
+        const t = entry.body.translation();
+        this.impacts.push({ material: entry.material, speed, position: new THREE.Vector3(t.x, t.y, t.z) });
+      }
+    });
+  }
+
+  /** @returns {{material:string, speed:number, position:THREE.Vector3}[]} impacts since the last call */
+  takeImpacts() {
+    return this.impacts.splice(0);
   }
 
   /** Lifts the car, levels it (keeping its heading) and stops it. */

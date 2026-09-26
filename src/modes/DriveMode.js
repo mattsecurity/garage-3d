@@ -101,6 +101,7 @@ export class DriveMode {
     const wheels = physics.wheelStates();
     effects.feed(wheels, dt);
     this.ctx.sound.car.drive(telemetry(physics, wheels));
+    for (const hit of physics.takeImpacts()) this.ctx.sound.impacts.play(hit, camera);
     _target.copy(car.root.position).multiplyScalar(FOLLOW).setY(0);
     const k = 1 - Math.exp(-3 * dt);
     this.lookAt.lerp(_target, k);
