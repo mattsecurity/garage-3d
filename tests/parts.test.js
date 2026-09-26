@@ -44,6 +44,15 @@ describe('buildParts', () => {
     expect(byId['wheel-fl'].radius).toBeCloseTo(0.35);
   });
 
+  it('takes the radius from the tread when the sidewall mesh is bulkier', () => {
+    const tyre = [
+      mesh(0, { isWheel: true, box: box(0.8, 0.36, 1.4, 0.32, 0.68, 0.68) }), // sidewalls: wider, smaller diameter
+      mesh(1, { isWheel: true, box: box(0.8, 0.36, 1.4, 0.26, 0.72, 0.72) }), // tread
+    ];
+    const [wheel] = buildParts(tyre, { carLength: 5 });
+    expect(wheel.radius).toBeCloseTo(0.36);
+  });
+
   it('puts painted meshes in the body', () => expect(byId['body-1'].meshIds).toEqual([0]));
 
   it('splits far-apart lights into two parts', () => expect(parts.filter((p) => p.kind === 'lights')).toHaveLength(2));

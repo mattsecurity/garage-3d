@@ -79,7 +79,12 @@ export function buildParts(meshes, { carLength, maxParts = 10 }) {
   }
   for (const [key, members] of Object.entries(corners)) {
     if (!members.length) continue;
-    const main = members.reduce((a, b) => (boxVolume(b.box) > boxVolume(a.box) ? b : a));
+    // The tyre is the mesh with the largest diameter (its tread when sidewall and tread are separate meshes).
+    const diameter = (m) => Math.max(...boxSize(m.box).slice(1));
+    const main = members.reduce((a, b) => {
+      const d = diameter(b) - diameter(a);
+      return d > 1e-3 || (Math.abs(d) <= 1e-3 && boxVolume(b.box) > boxVolume(a.box)) ? b : a;
+    });
     const [, sy, sz] = boxSize(main.box);
     parts.push({
       id: `wheel-${key}`,
