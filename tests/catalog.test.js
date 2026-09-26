@@ -19,6 +19,8 @@ describe('catalog', () => {
       expect(c.wheelPattern, c.id).toBeInstanceOf(RegExp);
       expect(c.paintPattern === null || c.paintPattern instanceof RegExp, c.id).toBe(true);
       expect(c.credit.title && c.credit.author && c.credit.license && c.credit.url, c.id).toBeTruthy();
+      expect(c.credit.licenseUrl === null || /^https:\/\/creativecommons\.org\/licenses\/by\/4\.0\/$/.test(c.credit.licenseUrl), c.id).toBe(true);
+      if (c.credit.license === 'CC-BY-4.0') expect(c.credit.licenseUrl, c.id).toBeTruthy();
     }
   });
 

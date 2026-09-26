@@ -3,6 +3,7 @@
 // wheelPattern: matches the name of each wheel mesh or one of its ancestors (three.js turns spaces into "_").
 // paintPattern: material name(s) that can be recoloured; null when the livery is a texture.
 // bodyPattern (optional): extra materials that belong to the body shell in the kit but are not recoloured.
+// credit.licenseUrl: link to the licence text, or null when the licence is unverified (Ferrari 458).
 
 export const CARS = [
   {
@@ -20,6 +21,7 @@ export const CARS = [
       author: 'vicent091036 (dagli esempi di three.js)',
       license: 'licenza originale non verificata',
       url: 'https://github.com/mrdoob/three.js/tree/dev/examples/models/gltf',
+      licenseUrl: null,
     },
   },
   {
@@ -38,6 +40,7 @@ export const CARS = [
       author: 'Hari',
       license: 'CC-BY-4.0',
       url: 'https://sketchfab.com/3d-models/2019-chevrolet-corvette-c8-stingray-790c40ccff6843eab0b7b4bd18421ff8',
+      licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
     },
   },
   {
@@ -55,6 +58,7 @@ export const CARS = [
       author: 'vecarz',
       license: 'CC-BY-4.0',
       url: 'https://sketchfab.com/3d-models/mclaren-p1-wwwvecarzcom-adae2edc721e4ce7b31c1d06a581e30a',
+      licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
     },
   },
   {
@@ -73,6 +77,7 @@ export const CARS = [
       author: 'adrianaflak09',
       license: 'CC-BY-4.0',
       url: 'https://sketchfab.com/3d-models/2019-lamborghini-huracan-evo-71b4b185956d466689ad6edf759ec8b4',
+      licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
     },
   },
   {
@@ -90,6 +95,7 @@ export const CARS = [
       author: 'Black Snow',
       license: 'CC-BY-4.0',
       url: 'https://sketchfab.com/3d-models/nissan-skyline-gtr-r35-7b142ea3376e4811a326256c59bbc7a2',
+      licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
     },
   },
   {
@@ -108,6 +114,7 @@ export const CARS = [
       author: 'vecarz',
       license: 'CC-BY-4.0',
       url: 'https://sketchfab.com/3d-models/mclaren-mp45-wwwvecarzcom-b0db423a98584469a73ad9b5df2ab969',
+      licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
     },
   },
 ];

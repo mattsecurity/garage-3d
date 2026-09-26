@@ -33,5 +33,4 @@ Vite · three.js · Rapier (fisica, caricata al primo Drive) · GSAP · Vitest. 
 | Nissan GT-R R35 | Black Snow | CC-BY-4.0 | [Sketchfab](https://sketchfab.com/3d-models/nissan-skyline-gtr-r35-7b142ea3376e4811a326256c59bbc7a2) |
 | McLaren MP4/5 (1989) | vecarz | CC-BY-4.0 | [Sketchfab](https://sketchfab.com/3d-models/mclaren-mp45-wwwvecarzcom-b0db423a98584469a73ad9b5df2ab969) |
 
-I modelli sono stati ricompressi (Draco + WebP). Nomi e marchi delle auto appartengono ai rispettivi
-produttori: il progetto è pensato per uso personale / portfolio, non commerciale.
+I modelli sono stati modificati (ricompressi con Draco + WebP). Licenza CC-BY-4.0: https://creativecommons.org/licenses/by/4.0/. Nomi e marchi delle auto appartengono ai rispettivi produttori: il progetto è pensato per uso personale / portfolio, non commerciale.

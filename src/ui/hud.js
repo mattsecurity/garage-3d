@@ -65,12 +65,16 @@ export class Hud {
   }
 
   setCredits(credit) {
-    const link = document.createElement('a');
-    link.href = credit.url;
-    link.target = '_blank';
-    link.rel = 'noopener';
-    link.textContent = `"${credit.title}"`;
-    $('credits').replaceChildren('Modello 3D ', link, ` di ${credit.author} · ${credit.license}`);
+    const link = (href, text) => {
+      const a = document.createElement('a');
+      a.href = href;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.textContent = text;
+      return a;
+    };
+    const license = credit.licenseUrl ? link(credit.licenseUrl, credit.license) : credit.license;
+    $('credits').replaceChildren('Modello 3D ', link(credit.url, `"${credit.title}"`), ` di ${credit.author} · `, license, ' · modificato (ricompresso)');
   }
 
   showPalette(visible) {
