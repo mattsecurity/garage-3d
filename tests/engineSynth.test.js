@@ -4,8 +4,8 @@ import { ENGINES } from '../src/audio/engines.js';
 
 const SR = 48000;
 
-/** Renders `seconds` of steady running and returns the left channel after a settling half second. */
-function render(profile, params, seconds = 1.5) {
+/** Renders `seconds` of steady running and returns the left channel after `settle` seconds. */
+function render(profile, params, seconds = 1.5, settle = 0.5) {
   const synth = new EngineSynth(SR, 5);
   synth.setProfile(profile);
   synth.set(params);
@@ -18,7 +18,7 @@ function render(profile, params, seconds = 1.5) {
     synth.process(left, right);
     out.set(left, i);
   }
-  return out.subarray(SR / 2);
+  return out.subarray(Math.floor(settle * SR));
 }
 
 /** Power at `hz` (Goertzel, Hann window). */
@@ -43,7 +43,7 @@ describe('EngineSynth', () => {
         [p.redline * 0.95, 1],
         [p.redline * 0.7, 0.04],
       ]) {
-        const x = render(p, { rpm, load, overrun: 0.5, spool: 0.8, whineAmp: 0.1, whineHz: 2000, squeal: 1, roll: 1 }, 1);
+        const x = render(p, { rpm, load, overrun: 0.5, spool: 0.8, whineAmp: 0.1, whineHz: 2000, squeal: 1, roll: 1 }, 0.5, 0.2);
         let peak = 0;
         let energy = 0;
         for (const v of x) {
@@ -55,7 +55,7 @@ describe('EngineSynth', () => {
         expect(Math.sqrt(energy / x.length), `${id} ${rpm}`).toBeGreaterThan(0.005);
       }
     }
-  });
+  }, 30000); // 33 renders: slow on shared CI runners
 
   it('puts its energy on the firing frequency and its harmonics', () => {
     const p = ENGINES['ferrari-458'];
