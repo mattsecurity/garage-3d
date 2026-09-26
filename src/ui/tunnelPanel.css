@@ -1,0 +1,218 @@
+/* Wind-tunnel panel (Studio mode), built on the shared --hud-* tokens from style.css. */
+#tunnel {
+  position: fixed;
+  left: var(--hud-edge, 20px);
+  top: 50%;
+  transform: translateY(-42%);
+  width: 284px;
+  max-height: calc(100vh - 240px);
+  overflow: auto;
+  z-index: 5;
+  color: var(--hud-fg);
+  background: var(--hud-surface);
+  -webkit-backdrop-filter: var(--hud-blur);
+  backdrop-filter: var(--hud-blur);
+  border: 1px solid var(--hud-border);
+  border-radius: var(--hud-radius-card, 18px);
+  box-shadow: var(--hud-shadow);
+  font-family: var(--hud-font);
+  font-size: 13px;
+  user-select: none;
+  scrollbar-width: none;
+}
+
+#tunnel[hidden] {
+  display: none;
+}
+
+#tunnel summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 14px 16px;
+  font-weight: 600;
+  font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: var(--hud-radius-card, 18px);
+}
+
+#tunnel summary::-webkit-details-marker {
+  display: none;
+}
+
+#tunnel summary::after {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-right: 1.6px solid var(--hud-muted);
+  border-bottom: 1.6px solid var(--hud-muted);
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 0.25s var(--hud-ease);
+}
+
+#tunnel details:not([open]) summary::after {
+  transform: translateY(1px) rotate(-135deg);
+}
+
+#tunnel .t-body {
+  padding: 0 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#tunnel .t-row {
+  display: grid;
+  grid-template-columns: 72px 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+
+#tunnel .t-row.disabled {
+  opacity: 0.4;
+}
+
+#tunnel .t-row .t-seg {
+  grid-column: 2 / 4;
+}
+
+#tunnel .t-label,
+#tunnel dt {
+  color: var(--hud-muted);
+  font-size: 12px;
+}
+
+#tunnel output {
+  min-width: 66px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+}
+
+#tunnel input[type='range'] {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--hud-fg);
+  cursor: pointer;
+}
+
+#tunnel .t-seg {
+  display: flex;
+  gap: 2px;
+  background: var(--hud-glass);
+  border-radius: 10px;
+  padding: 2px;
+}
+
+#tunnel .t-seg button {
+  flex: 1;
+  color: var(--hud-muted);
+  font-size: 12px;
+  padding: 6px 4px;
+  border-radius: 8px;
+  transition:
+    background 0.2s var(--hud-ease),
+    color 0.2s var(--hud-ease);
+}
+
+#tunnel .t-seg button[aria-pressed='true'] {
+  background: var(--hud-glass-strong);
+  color: var(--hud-fg);
+  font-weight: 500;
+}
+
+#tunnel summary:focus-visible,
+#tunnel input:focus-visible {
+  outline: 2px solid var(--hud-focus);
+  outline-offset: 2px;
+}
+
+#tunnel .t-legend[hidden] {
+  display: none;
+}
+
+/* Turbo colormap, low Cp (suction) on the left, high (stagnation) on the right. */
+#tunnel .t-bar {
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(
+    to right,
+    #30123b,
+    #4145ab,
+    #4675ed,
+    #39a2fc,
+    #1bcfd4,
+    #24eca6,
+    #61fc6c,
+    #a4fc3b,
+    #d1e834,
+    #f3c63a,
+    #fe9b2d,
+    #f36315,
+    #d93806,
+    #b11901,
+    #7a0402
+  );
+}
+
+#tunnel .t-scale {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+  color: var(--hud-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+#tunnel .t-data {
+  margin: 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--hud-border);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 14px;
+}
+
+#tunnel .t-data div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+#tunnel dd {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+#tunnel .t-note {
+  margin: 0;
+  color: var(--hud-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+@media (max-width: 640px) {
+  /* The panel sheet takes the bottom of the screen: the colour palette moves to a row under the title. */
+  body.tunnel-open #palette {
+    top: 118px;
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    flex-direction: row;
+    gap: 10px;
+  }
+
+  #tunnel {
+    left: var(--hud-edge, 14px);
+    right: var(--hud-edge, 14px);
+    top: auto;
+    bottom: calc(80px + env(safe-area-inset-bottom));
+    transform: none;
+    width: auto;
+    max-height: 46vh;
+  }
+}

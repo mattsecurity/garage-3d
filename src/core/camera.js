@@ -7,7 +7,7 @@ export const HOME_ROTATION = new THREE.Quaternion().setFromAxisAngle(new THREE.V
 export const VIEWS = {
   kit: { position: [0, 16.5, 15], target: [0, 0, 0.8] },
   drive: { position: [0, 13, 15], target: [0, 0, 0] },
-  studio: { position: [7.2, 2.1, -7.6], target: [0, 0.6, 0] },
+  studio: { position: [6.3, 1.35, -2.6], target: [0, 0.55, 0] },
 };
 
 /** Pulls the camera back on narrow or portrait screens so the scene still fits. */

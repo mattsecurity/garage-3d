@@ -22,7 +22,7 @@ const HINTS = {
     { keys: ['R'], label: 'Raddrizza' },
   ],
   driveTouch: [{ label: 'Usa il joystick per guidare' }],
-  studio: [{ label: 'Trascina per ruotare la vista' }],
+  studio: [{ label: 'Galleria del vento' }, { label: 'Trascina per ruotare la vista' }],
 };
 const HINT_SECONDS = 6;
 

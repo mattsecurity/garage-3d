@@ -6,12 +6,13 @@ import { createEnvironment, createRenderer, onResize } from './core/renderer.js'
 import { CARS } from './cars/catalog.js';
 import { loadCar } from './cars/garage.js';
 import { Desk } from './world/Desk.js';
-import { Studio } from './world/Studio.js';
+import { WindTunnel } from './world/WindTunnel.js';
 import { Effects } from './world/Effects.js';
 import { Kit } from './kit/Kit.js';
 import { Keyboard } from './input/controls.js';
 import { Joystick } from './input/joystick.js';
 import { Hud } from './ui/hud.js';
+import { TunnelPanel } from './ui/tunnelPanel.js';
 import { createCurtain } from './ui/curtain.js';
 import { HOME_ROTATION } from './core/camera.js';
 import { KitMode } from './modes/KitMode.js';
@@ -19,7 +20,6 @@ import { DriveMode } from './modes/DriveMode.js';
 import { StudioMode } from './modes/StudioMode.js';
 
 const DESK_BG = 0xe9e9e9;
-const STUDIO_BG = 0x000000;
 
 let ctx = null;
 let modes = {};
@@ -96,15 +96,16 @@ async function boot() {
   const deskFog = new THREE.Fog(DESK_BG, 32, 80);
   scene.background = new THREE.Color(DESK_BG);
   scene.fog = deskFog;
-  scene.environment = createEnvironment(renderer);
+  const deskEnvironment = createEnvironment(renderer);
+  scene.environment = deskEnvironment;
   const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 250);
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.enabled = false;
 
   const desk = new Desk();
-  const studio = new Studio();
-  scene.add(desk.group, studio.group);
+  const tunnel = new WindTunnel(renderer);
+  scene.add(desk.group, tunnel.group);
   const effects = new Effects(scene);
 
   ctx = {
@@ -113,7 +114,8 @@ async function boot() {
     camera,
     controls,
     desk,
-    studio,
+    tunnel,
+    tunnelPanel: new TunnelPanel({ onChange: (changes) => tunnel.set(changes) }),
     effects,
     hud,
     kit: new Kit(),
@@ -123,7 +125,7 @@ async function boot() {
     physics: null,
     car: null,
     stage: 'desk',
-    /** Swaps desk ↔ studio behind a black curtain; `whileHidden` runs while the screen is black. */
+    /** Swaps desk ↔ wind tunnel behind a black curtain; `whileHidden` runs while the screen is black. */
     async setStage(stage, whileHidden) {
       if (ctx.stage === stage) {
         whileHidden?.();
@@ -132,10 +134,10 @@ async function boot() {
       await ctx.curtain.close();
       const inStudio = stage === 'studio';
       desk.group.visible = !inStudio;
-      studio.group.visible = inStudio;
-      scene.background.set(inStudio ? STUDIO_BG : DESK_BG);
-      scene.fog = inStudio ? null : deskFog;
-      scene.environmentIntensity = inStudio ? 0.35 : 1;
+      tunnel.group.visible = inStudio;
+      scene.background.copy(inStudio ? tunnel.background : new THREE.Color(DESK_BG));
+      scene.fog = inStudio ? tunnel.fog : deskFog;
+      scene.environment = inStudio ? tunnel.environment : deskEnvironment;
       ctx.stage = stage;
       hud.setStage(stage);
       whileHidden?.();
@@ -145,7 +147,10 @@ async function boot() {
   modes = { kit: new KitMode(ctx), drive: new DriveMode(ctx), studio: new StudioMode(ctx) };
   hud.setAvailableModes(Object.keys(modes));
 
-  const viewport = () => effects.setViewport(renderer.domElement.height, camera.fov);
+  const viewport = () => {
+    effects.setViewport(renderer.domElement.height, camera.fov);
+    tunnel.setViewport(renderer.domElement.height, camera.fov);
+  };
   onResize(renderer, camera, viewport);
   viewport();
 
@@ -159,6 +164,9 @@ async function boot() {
     if (controls.enabled) controls.update(dt);
     renderer.render(scene, camera);
   });
+
+  // Dev-only handle for stepping the app from the console while the tab is hidden (the timer then reports dt = 0).
+  if (import.meta.env.DEV) window.__garage = { ctx, setMode, setCar, get mode() { return mode; } };
 
   await setCar(0, { initial: true });
   await setMode('kit');

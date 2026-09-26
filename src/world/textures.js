@@ -111,19 +111,6 @@ export function jarLabelTexture(color) {
   return toTexture(c);
 }
 
-/** Radial gradient for alpha maps: `inner` grey level at the centre, white at the rim. */
-export function radialTexture(inner = 110) {
-  const [c, g] = canvas(256, 256);
-  const grad = g.createRadialGradient(128, 128, 0, 128, 128, 128);
-  grad.addColorStop(0, `rgb(${inner},${inner},${inner})`);
-  grad.addColorStop(0.35, `rgb(${inner + 50},${inner + 50},${inner + 50})`);
-  grad.addColorStop(1, 'rgb(255,255,255)');
-  g.fillStyle = grad;
-  g.fillRect(0, 0, 256, 256);
-  const texture = new THREE.CanvasTexture(c);
-  return texture;
-}
-
 /** Small tag with a sprue letter (A, B, C...). */
 export function letterTexture(letter) {
   const [c, g] = canvas(128, 128);

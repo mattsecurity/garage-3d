@@ -4,8 +4,8 @@ Modellini 3D di auto sportive reali, ispirati alla demo
 [Formula di Patrick Heintzmann](https://lab.patrickheintzmann.com/demo/demoFormula):
 
 - **[Kit]**: l'auto è un kit di plastica grigia, con i pezzi ancora sulle stampate, sopra un tappetino da taglio.
-- **[Drive]**: i pezzi volano al loro posto, l'auto si vernicia e la guidi sul tavolo (WASD / frecce, Spazio freno a mano, R raddrizza; joystick su telefono).
-- **[Studio]**: showroom scuro con pavimento a specchio e tavolozza colori.
+- **[Drive]**: i pezzi volano al loro posto, l'auto si vernicia e la guidi sul tavolo (WASD / frecce, Spazio per derapare, R raddrizza; joystick e pulsante Drift su telefono). Ogni oggetto sul tavolo è un corpo fisico: barattoli, coni, matite e attrezzi si ribaltano, rotolano e scivolano quando li urti.
+- **[Studio]**: galleria del vento a vena aperta con rullo mobile. Il flusso attorno al modello viene calcolato (flusso potenziale su griglia 3D con scia turbolenta): il fumo del pettine segue la carrozzeria, la mappa Cp colora le pressioni, e il pannello mostra Cx, area frontale, resistenza, deportanza e potenza alla velocità scelta (coefficienti indicativi). Tavolozza colori sempre disponibile.
 
 ## Avvio
 
