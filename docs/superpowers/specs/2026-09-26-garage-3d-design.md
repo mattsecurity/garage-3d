@@ -15,7 +15,7 @@ Uso: personale / portfolio, non commerciale. Nomi reali delle auto ammessi.
 ## Stack
 
 - Vite (build statica)
-- three.js (rendering, GLTFLoader + DRACOLoader/Meshopt)
+- three.js 0.186 (rendering, GLTFLoader + DRACOLoader con decoder inclusi nel bundle via `DRACO_GLTF_CONFIG`)
 - @dimforge/rapier3d-compat (fisica, `DynamicRayCastVehicleController`)
 - GSAP (transizioni tra modalità, animazione montaggio)
 - Vitest (unit test sulla logica pura)
@@ -26,63 +26,81 @@ JavaScript vanilla (ES modules), niente framework UI.
 ## Architettura
 
 ```
+scripts/
+  fetch-models.mjs   scarica i 6 GLB del catalogo e li comprime (Draco + WebP) in public/models/
 src/
-  main.js            bootstrap, render loop, macchina a stati delle modalità
+  main.js            bootstrap, render loop, macchina a stati delle modalità, cambio auto
   core/
-    renderer.js      WebGLRenderer, ACES tone mapping, ombre, environment (RoomEnvironment/HDR)
-    camera.js        camere per modalità + transizioni GSAP
-    loader.js        GLTF + DRACO/Meshopt + progresso di caricamento
+    renderer.js      WebGLRenderer, Neutral tone mapping, ombre PCF, environment (RoomEnvironment)
+    camera.js        viste per modalità, posa "home" dell'auto, transizioni GSAP (testata)
+    loader.js        GLTFLoader + DRACOLoader con progresso
   cars/
-    catalog.js       elenco auto: url, scala, regole di riconoscimento pezzi, colori, crediti
-    CarModel.js      carica GLB, normalizza scala/orientamento, classifica pezzi, gestisce vernice
-    parts.js         logica pura: classificazione mesh → pezzi (testata)
-  modes/
-    KitMode.js       pezzi grigi su stampate generate → montaggio animato
-    DriveMode.js     fisica Rapier, input tastiera + joystick touch, camera inseguimento
-    StudioMode.js    sfondo scuro, pavimento riflettente, particelle, orbita
+    catalog.js       dati puri: url, orientamento, lunghezza, regex ruote/vernice, crediti (testata)
+    garage.js        carica e mette in cache le auto
+    CarModel.js      normalizza scala/orientamento, costruisce i pezzi, vernice, look "kit" (testata)
+    parts.js         logica pura: mesh → pezzi del kit (testata)
+    split.js         logica pura: divide una mesh-asse in ruota sx/dx/semiasse (testata)
   kit/
-    packing.js       logica pura: bin-packing a scaffale dei pezzi sulle stampate (testata)
-    sprue.js         generazione geometria stampate (telaio + canali)
-  world/
-    Desk.js          tappetino da taglio (texture canvas) + attrezzi decorativi
-    Effects.js       segni gomme (ribbon) + fumo (sprite instanziati)
+    packing.js       logica pura: orientamento in piano, bin-packing, griglia stampate (testata)
+    sprue.js         geometria delle stampate
+    Kit.js           layout del kit + animazioni montaggio/smontaggio
+  physics/
+    driving.js       parametri veicolo + input → comandi ruote (testata)
+    Physics.js       mondo Rapier, veicolo a raggi, attrezzi urtabili (testata)
   input/
-    controls.js      logica pura: stato tasti/joystick → {throttle, steer, brake, handbrake} (testata)
+    controls.js      tastiera + mappatura tasti/joystick → input guida (testata)
     joystick.js      joystick virtuale mobile
+  world/
+    textures.js      texture generate su canvas (tappetino, righello, etichette, gradienti)
+    props.js         attrezzi procedurali (barattoli, taglierino, forbici, ...)
+    Desk.js          tavolo, tappetino, attrezzi, luce diurna
+    Effects.js       segni gomme + fumo
+    Studio.js        pavimento a specchio, faretti, cubetti e scie
+  modes/
+    KitMode.js  DriveMode.js  StudioMode.js
   ui/
-    hud.js           barra modalità, selettore auto, palette colori, crediti, caricamento
+    hud.js           titolo, suggerimenti, barra modalità, tavolozza, crediti, caricamento, errori
+    curtain.js       dissolvenza nera per il cambio scena desk ↔ studio
 ```
 
 Flusso: `catalog` → `CarModel` (istanza per auto, in cache dopo il primo
-caricamento) → la modalità attiva riceve `{scene, camera, car}` e implementa
-`enter(prev)`, `exit(next)`, `update(dt)`. Il cambio modalità è una timeline
-GSAP (exit della modalità corrente, poi enter della nuova). Il cambio auto
-carica il GLB (se non in cache) e ricostruisce kit/fisica per la modalità attiva.
+caricamento) → la modalità attiva riceve un contesto condiviso (`ctx`: scena,
+camera, auto, kit, fisica, HUD...) e implementa `enter(prev)`, `exit(next)`,
+`update(dt)`, `onCarChanged(car)`. Il cambio modalità chiama exit della modalità
+corrente e poi enter della nuova (animazioni GSAP). Il cambio auto carica il GLB
+(se non in cache) e ricostruisce kit/fisica per la modalità attiva.
+
+Convenzioni: spazio auto con muso +Z, alto +Y, sinistra +X, ruote a terra a y = 0.
+A riposo l'auto è ruotata di 180° (muso verso -Z, lontano dalla camera) così W
+porta l'auto "in su" sullo schermo. Le stampate del kit sono figlie della radice
+dell'auto, quindi le pose del kit sono nello spazio auto.
 
 ## Modalità Kit
 
-1. **Classificazione pezzi** (`parts.js`): si attraversa il modello; le mesh
-   vengono raggruppate in pezzi logici tramite regole sul nome (ruote, cerchi,
-   pneumatici, carrozzeria, vetri, interni, alettone, luci…) definite per auto nel
-   catalogo con fallback generico. Se il modello ha poche mesh, si divide per
-   materiale. Ogni pezzo conserva la sua trasformazione "montata".
+1. **Classificazione pezzi** (`parts.js`): le mesh delle ruote (regex del
+   catalogo sul nome della mesh o di un antenato) diventano 4 pezzi, uno per
+   angolo. Le altre vanno in categorie (carrozzeria = materiale vernice o
+   `bodyPattern`; fari, vetri, abitacolo per parole chiave su nome/materiale;
+   il resto è telaio) e ogni categoria si divide in gruppi vicini nello spazio.
+   I gruppi troppo piccoli e quelli oltre il limite (10) si uniscono al telaio.
+   Ogni pezzo conserva la sua posa "montata".
 2. **Disposizione** (`packing.js`): ogni pezzo viene orientato in piano (asse
-   più lungo orizzontale), poi disposto con bin-packing a scaffale su 2–3
-   stampate rettangolari.
+   più lungo lungo X), poi disposto con bin-packing a scaffale su 2–5
+   stampate 5.6 × 5.2 in griglia (verificato: tutti i kit stanno nel tappetino 20 × 14).
 3. **Stampate** (`sprue.js`): telaio rettangolare di tubi + canali di iniezione
    (cilindri sottili) dal telaio a ogni pezzo. Materiale plastica grigia opaca.
-4. **Materiale kit**: tutti i pezzi usano plastica grigia (`MeshStandardMaterial`,
-   roughness alta, metalness 0); i materiali originali sono conservati.
+4. **Materiale kit**: ai materiali originali viene iniettato (`onBeforeCompile`)
+   un mix verso plastica grigia opaca, comandato da un'unica uniform condivisa
+   `uKit` (0 = vernice originale, 1 = plastica). Niente materiali duplicati.
 5. **Montaggio** (Kit → Drive/Studio): le stampate svaniscono; ogni pezzo vola
    lungo una curva di Bézier verso la posizione montata, in sequenza sfalsata
-   (carrozzeria/telaio → ruote → vetri/dettagli). Il materiale grigio sfuma verso
-   quello originale. Durata ~2.5 s.
+   (telaio → carrozzeria → abitacolo → vetri → fari → ruote). Poi `uKit` sfuma
+   da 1 a 0. Durata ~2.5 s.
 6. **Smontaggio** (→ Kit): animazione inversa.
 
 Scena Kit/Drive: tavolo chiaro, tappetino da taglio blu con griglia (texture
 canvas generata), attrezzi decorativi (taglierino, forbici, righello, barattoli
-di vernice). Attrezzi: modelli CC0 se disponibili, altrimenti geometrie
-procedurali semplici.
+di vernice, matita, gomma, cacciavite), tutti procedurali: nessun file extra.
 
 ## Modalità Drive
 
@@ -91,22 +109,27 @@ procedurali semplici.
   delle mesh ruota del GLB.
 - Input: WASD/frecce = gas/freno/sterzo; Spazio = freno a mano (derapata);
   R = raddrizza auto. Mobile: joystick virtuale.
-- Derapata: riduzione attrito laterale posteriore con freno a mano o a velocità
-  alta in curva.
+- Derapata: il freno a mano toglie motore e aderenza laterale al posteriore e
+  aggiunge una spinta d'imbardata verso la direzione di sterzo (i veicoli a raggi
+  di Rapier da soli non sbandano). Parametri tarati in simulazione: 0→11 u/s in
+  ~2 s, velocità max 11 u/s, retromarcia 6 u/s.
 - Ruote visive ruotano e sterzano in base allo stato del controller.
 - Effetti: segni gomme (ribbon sul tappetino, sbiadiscono nel tempo), fumo
   (sprite instanziati) quando lo slittamento supera una soglia.
 - Mondo: piano tavolo + muri invisibili ai bordi; barattoli di vernice dinamici
   (urtabili), altri attrezzi statici.
-- Camera: inseguimento dall'alto obliquo, smorzata.
+- Camera: vista dall'alto obliqua con orientamento fisso che segue l'auto (90%), smorzata.
+- La fisica (Rapier, ~4 MB) si carica solo al primo ingresso in Drive.
 
 ## Modalità Studio
 
 - Sfondo nero, auto su piano riflettente (`Reflector` con fade radiale).
 - Particelle: frammenti cubici + scie luminose attorno all'auto.
 - Camera: orbita lenta automatica + OrbitControls utente con limiti.
-- Configuratore: palette colori vernice (6–8 colori + originale) e colore
-  cerchi. Il colore scelto resta in Drive.
+- Configuratore: tavolozza con 7 colori vernice + originale. Il colore scelto
+  resta in Drive. Niente colore cerchi: i materiali dei cerchi sono diversi in
+  ogni modello (a volte condivisi con freni o carrozzeria). MP4/5 non ha
+  tavolozza: la livrea è una texture.
 
 ## UI
 
@@ -130,14 +153,15 @@ etichette in box scuri, pulsanti tra parentesi quadre.
 
 ## Test
 
-- Vitest su logica pura: `parts.js` (classificazione), `packing.js`
-  (nessuna sovrapposizione, tutti i pezzi dentro le stampate), `controls.js`
-  (mappatura input).
+- Vitest (ambiente Node): `split.js`, `parts.js`, `packing.js`, `camera.js`,
+  `driving.js`, `controls.js`, `catalog.js`, `CarModel.js` (scene sintetiche) e
+  `Physics.js` (Rapier gira anche in Node).
 - Verifica visiva nel browser integrato: ogni modalità × ogni auto, screenshot.
 
 ## Modelli
 
-Scaricati in `public/models/`; quelli non compressi o > 10 MB passano da gltf-transform.
+Scaricati in `public/models/` da `npm run models` e tutti ricompressi (Draco + WebP ≤ 2048 px):
+~15 MB in totale invece di ~55 MB. I file compressi vanno in git.
 Crediti in `catalog.js` e mostrati in UI.
 
 Auto selezionate: vedi sezione "Catalogo auto".
