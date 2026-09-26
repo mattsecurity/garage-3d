@@ -73,6 +73,16 @@ describe('Physics', () => {
     expect(new THREE.Vector3(0, 1, 0).applyQuaternion(car.root.quaternion).y).toBeCloseTo(1);
   });
 
+  it('drives again after removeCar + setCar (e.g. switching cars)', () => {
+    physics.removeCar();
+    car.root.position.set(0, 0, 0);
+    car.root.quaternion.identity();
+    physics.setCar(car);
+    run(physics, 1.5, { ...idle, throttle: 1 });
+    expect(Number.isNaN(car.wheels[0].object.rotation.x)).toBe(false);
+    expect(car.root.position.z).toBeGreaterThan(3);
+  });
+
   it('removeCar clears the vehicle', () => {
     physics.removeCar();
     expect(physics.wheelStates()).toEqual([]);

@@ -126,6 +126,9 @@ export class Physics {
       this.vehicle.setWheelMaxSuspensionForce(i, VEHICLE.maxSuspensionForce);
       this.vehicle.setWheelFrictionSlip(i, VEHICLE.frictionSlip);
     });
+    // Rapier only finalises a new body's mass and broad-phase entry during world.step(); updating the
+    // vehicle before that yields NaN once the world has already been stepped (e.g. switching cars).
+    this.world.step();
     this.car = car;
     this.steer = 0;
     this.upsideDown = 0;
