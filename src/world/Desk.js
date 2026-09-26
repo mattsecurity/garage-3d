@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { cuttingMatTexture } from './textures.js';
 import { brush, cone, cutter, eraser, glueBottle, paintJar, pencil, ruler, screwdriver, scissors, tapeRoll } from './props.js';
 
-export const MAT = { w: 40, d: 28, thickness: 0.04 };
+export const MAT = { w: 20, d: 14, thickness: 0.04 };
 
 const SUN_OFFSET = new THREE.Vector3(-6, 22, 10); // sun position relative to the centre of its shadow box
 const _p = new THREE.Vector3();
@@ -21,7 +21,7 @@ export class Desk {
     table.receiveShadow = true;
 
     const side = new THREE.MeshStandardMaterial({ color: 0x1f3557, roughness: 0.8 });
-    const top = new THREE.MeshStandardMaterial({ map: cuttingMatTexture(MAT.w, MAT.d, 75), roughness: 0.78 });
+    const top = new THREE.MeshStandardMaterial({ map: cuttingMatTexture(MAT.w, MAT.d), roughness: 0.78 });
     const mat = new THREE.Mesh(new THREE.BoxGeometry(MAT.w, MAT.thickness, MAT.d), [side, side, top, side, side, side]);
     mat.position.y = -MAT.thickness / 2;
     mat.receiveShadow = true;

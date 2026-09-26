@@ -2,7 +2,7 @@ import RAPIER from '@dimforge/rapier3d-compat';
 import * as THREE from 'three';
 import { VEHICLE, driveCommand } from './driving.js';
 
-const WORLD_HALF = { x: 52, z: 36 }; // invisible walls around the desk, well beyond the 40 × 28 cutting mat (Desk.js MAT)
+const WORLD_HALF = { x: 52, z: 36 }; // invisible walls around the desk, far past the cutting mat (Desk.js MAT)
 const HULL_POINTS = 8000; // vertices sampled for the car's collision hull
 const MAX_KICK = 4; // largest speed change (units/s) a wheel can give a prop in one step
 const _q = new THREE.Quaternion();
