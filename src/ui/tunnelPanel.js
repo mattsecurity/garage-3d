@@ -45,6 +45,13 @@ const TEMPLATE = /* html */ `
         </div>
       </section>
 
+      <section class="t-group">
+        <div class="t-head">
+          <span class="t-label">Musica</span>
+          <button type="button" class="t-switch" role="switch" data-toggle="music" aria-label="Musica"><i></i></button>
+        </div>
+      </section>
+
       <dl class="t-data">
         <div><dt>Cx</dt><dd data-out="cd"></dd></div>
         <div><dt>Area frontale</dt><dd data-out="area"></dd></div>

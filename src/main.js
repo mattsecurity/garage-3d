@@ -21,6 +21,7 @@ import { StudioMode } from './modes/StudioMode.js';
 import { AudioEngine } from './audio/AudioEngine.js';
 import { CarSound } from './audio/CarSound.js';
 import { Impacts } from './audio/impacts.js';
+import { StudioSound } from './audio/StudioSound.js';
 
 const DESK_BG = 0xe9e9e9;
 
@@ -31,7 +32,7 @@ let busy = false;
 let carIndex = 0;
 
 const audio = new AudioEngine();
-const sound = { audio, car: new CarSound(audio), impacts: new Impacts(audio) };
+const sound = { audio, car: new CarSound(audio), impacts: new Impacts(audio), studio: new StudioSound(audio) };
 
 const hud = new Hud({
   onMode: (name) => setMode(name),
@@ -126,7 +127,13 @@ async function boot() {
     controls,
     desk,
     tunnel,
-    tunnelPanel: new TunnelPanel({ onChange: (changes) => tunnel.set(changes) }),
+    tunnelPanel: new TunnelPanel({
+      onChange: ({ music, ...changes }) => {
+        if (music !== undefined) sound.studio.setMusic(music);
+        tunnel.set(changes);
+        if (changes.kmh !== undefined) sound.studio.setWind(changes.kmh);
+      },
+    }),
     effects,
     hud,
     sound,

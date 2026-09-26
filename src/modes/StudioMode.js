@@ -32,9 +32,10 @@ export class StudioMode {
   }
 
   async enter() {
-    const { kit, controls, camera, hud, car, tunnel, tunnelPanel } = this.ctx;
+    const { kit, controls, camera, hud, car, tunnel, tunnelPanel, sound } = this.ctx;
     controls.enabled = false;
     if (kit.state !== 'assembled') await kit.assemble();
+    sound.studio.start(tunnel.settings.kmh);
     await this.ctx.setStage('studio', () => {
       this.#setLens(true);
       flyTo(camera, controls.target, VIEWS.studio, 0);
@@ -55,13 +56,14 @@ export class StudioMode {
       maxPolarAngle: Math.PI * 0.49,
     });
     hud.showPalette(car.paintable);
-    tunnelPanel.show(true, tunnel.settings);
+    tunnelPanel.show(true, { ...tunnel.settings, music: sound.studio.music });
     window.addEventListener('resize', this.onResize);
   }
 
   async exit(to) {
-    const { controls, camera, hud, tunnel, tunnelPanel } = this.ctx;
+    const { controls, camera, hud, tunnel, tunnelPanel, sound } = this.ctx;
     window.removeEventListener('resize', this.onResize);
+    sound.studio.stop();
     Object.assign(controls, { enabled: false, autoRotate: false, minPolarAngle: 0 });
     hud.showPalette(false);
     tunnelPanel.show(false);
