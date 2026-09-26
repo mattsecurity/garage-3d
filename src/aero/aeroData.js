@@ -9,6 +9,8 @@ export const AERO = {
   'huracan-evo': { cd: 0.36, cl: -0.3 },
   'gtr-r35': { cd: 0.26, cl: -0.06 },
   'mclaren-mp45': { cd: 1.0, cl: -2.8 }, // late-80s Formula 1: drag and downforce of a winged open-wheeler
+  'mclaren-mcl39': { cd: 0.8, cl: -3.2 }, // 2022–25 ground-effect Formula 1: most of the downforce comes from the floor
+  'redbull-rb22': { cd: 0.7, cl: -2.2 }, // 2026 rules: roughly a third less downforce, and less drag, than 2025
   'mini-cooper-s': { cd: 0.4, cl: 0.25 }, // 1960s saloon: boxy, with some lift
 };
 

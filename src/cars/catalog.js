@@ -120,6 +120,45 @@ export const CARS = [
     },
   },
   {
+    id: 'mclaren-mcl39',
+    name: 'McLaren MCL39',
+    year: 2025,
+    file: 'models/mclaren-mcl39.glb',
+    sourceUrl: 'https://raw.githubusercontent.com/SpeedHQ/RaceIQ/main/assets/models/source/f1_2025_mclaren_mcl39.glb',
+    forward: '+z',
+    length: 5.2, // the model's proportions with the 2 m maximum width
+    wheelPattern: /^(front_tire|rear_tire|front_wheel_windlet)/i, // one mesh per axle, split left/right on load
+    paintPattern: null,
+    bodyPattern: /^(main_body|front_wing|rear_wing|headrest)$/i,
+    maxTextureSize: 512, // 38 textures: 1024 px would take ~210 MB of GPU memory (~53 MB now)
+    credit: {
+      title: 'F1 2025 McLaren MCL39',
+      author: 'shunqi',
+      license: 'CC-BY-4.0',
+      url: 'https://sketchfab.com/3d-models/f1-2025-mclaren-mcl39-c6194270002b401bb25be7e35ab56e34',
+      licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
+    },
+  },
+  {
+    id: 'redbull-rb22',
+    name: 'Red Bull RB22',
+    year: 2026,
+    file: 'models/redbull-rb22.glb',
+    sourceUrl: 'https://raw.githubusercontent.com/gabydomingo/f1-data/main/f1-telemetry-web/public/models/f1_rb22.glb',
+    forward: '+z',
+    length: 5.27, // the source is already in metres
+    wheelPattern: /^(TYRE_(LF|RF|LR|RR)|wheel_(fl|fr|bl|br)|disc_(fl|fr|bl|br)|hub_caliper_(fl|fr|bl|br))/i,
+    paintPattern: null,
+    bodyPattern: /^(chasis|chassis2)/i,
+    credit: {
+      title: '2026 Red Bull Racing RB22',
+      author: 'Dave Love (Tyler_Dave)',
+      license: 'CC-BY-4.0',
+      url: 'https://sketchfab.com/3d-models/2026-red-bull-racing-rb22-8e5a68a7991c4a46bd66a879c060b3c5',
+      licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
+    },
+  },
+  {
     id: 'mini-cooper-s',
     name: 'Mini Cooper S',
     year: 1967,
