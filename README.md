@@ -9,6 +9,8 @@ Modellini 3D di auto sportive reali, ispirati alla demo
 
 ## Avvio
 
+Serve Node.js 22.12 o più recente.
+
 ```bash
 npm install
 npm run models   # scarica e comprime i modelli (servono solo se public/models/ è vuota)

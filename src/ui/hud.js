@@ -14,6 +14,7 @@ export const PALETTE = [
 const HINTS = {
   kit: 'Trascina per ruotare · [Drive] monta il kit',
   drive: 'WASD / Frecce per guidare · Spazio freno a mano · R raddrizza',
+  driveTouch: 'Joystick per guidare',
   studio: 'Trascina per ruotare la vista',
 };
 
@@ -22,9 +23,19 @@ export class Hud {
   /** @param {{onMode:(m:string)=>void, onPrev:()=>void, onNext:()=>void, onPaint:(c:string|null)=>void}} handlers */
   constructor({ onMode, onPrev, onNext, onPaint }) {
     this.modeButtons = [...document.querySelectorAll('.mode-btn')];
-    for (const b of this.modeButtons) b.addEventListener('click', () => onMode(b.dataset.mode));
-    $('prev-car').addEventListener('click', onPrev);
-    $('next-car').addEventListener('click', onNext);
+    for (const b of this.modeButtons)
+      b.addEventListener('click', (e) => {
+        onMode(b.dataset.mode);
+        e.currentTarget.blur();
+      });
+    $('prev-car').addEventListener('click', (e) => {
+      onPrev();
+      e.currentTarget.blur();
+    });
+    $('next-car').addEventListener('click', (e) => {
+      onNext();
+      e.currentTarget.blur();
+    });
     this.palette = $('palette');
     this.swatches = PALETTE.map((p, i) => {
       const b = document.createElement('button');
@@ -33,9 +44,10 @@ export class Hud {
       b.title = p.name;
       b.setAttribute('aria-label', p.name);
       if (p.color) b.style.background = p.color;
-      b.addEventListener('click', () => {
+      b.addEventListener('click', (e) => {
         this.setActiveSwatch(i);
         onPaint(p.color);
+        e.currentTarget.blur();
       });
       this.palette.append(b);
       return b;
@@ -53,7 +65,8 @@ export class Hud {
       b.classList.toggle('active', on);
       b.setAttribute('aria-pressed', String(on));
     }
-    $('hint').textContent = HINTS[name] ?? '';
+    const touch = window.matchMedia('(pointer: coarse)').matches;
+    $('hint').textContent = (name === 'drive' && touch ? HINTS.driveTouch : HINTS[name]) ?? '';
   }
 
   setStage(stage) {

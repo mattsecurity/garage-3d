@@ -46,10 +46,15 @@ async function setMode(name) {
   } catch (err) {
     console.error(err);
     hud.toast(err.userMessage ?? 'Modalità non disponibile');
-    mode = modes.kit;
-    hud.setMode('kit');
-    await ctx.setStage('desk');
-    await mode.enter(null);
+    try {
+      mode = modes.kit;
+      hud.setMode('kit');
+      await ctx.setStage('desk');
+      await mode.enter(null);
+    } catch (fatal) {
+      console.error(fatal);
+      hud.fatal('Qualcosa è andato storto. Ricarica la pagina.');
+    }
   } finally {
     busy = false;
   }
@@ -69,12 +74,12 @@ async function setCar(index, { initial = false } = {}) {
     car.setPaint(null);
     hud.setActiveSwatch(0);
     ctx.car = car;
-    ctx.scene.add(car.root);
-    ctx.kit.build(car);
-    mode?.onCarChanged(car);
     carIndex = i;
     hud.setCar(i, entry);
     hud.setCredits(entry.credit);
+    ctx.scene.add(car.root);
+    ctx.kit.build(car);
+    mode?.onCarChanged(car);
   } catch (err) {
     console.error(err);
     hud.toast(`Modello non disponibile: ${entry.name}`);
@@ -157,6 +162,8 @@ async function boot() {
 
   await setCar(0, { initial: true });
   await setMode('kit');
+  // Warm the module cache so the first Drive doesn't stall on Rapier's download.
+  setTimeout(() => import('./physics/Physics.js').catch(() => {}), 1500);
   hud.setLoading(false);
 }
 

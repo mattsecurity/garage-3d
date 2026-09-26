@@ -47,11 +47,12 @@ export class DriveMode {
       try {
         // Loaded on first drive: Rapier's WebAssembly is the biggest dependency.
         const { Physics } = await import('../physics/Physics.js');
-        this.ctx.physics = await Physics.create();
+        const physics = await Physics.create();
+        physics.addProps(this.ctx.desk.props);
+        this.ctx.physics = physics;
       } catch (err) {
         throw userError('Guida non disponibile su questo dispositivo', err);
       }
-      this.ctx.physics.addProps(this.ctx.desk.props);
     }
     return this.ctx.physics;
   }
@@ -100,9 +101,11 @@ export class DriveMode {
   }
 
   onCarChanged(car) {
+    if (car.wheels.length !== 4) throw userError('Questo modello non si può guidare');
     const { physics, kit, keyboard, effects } = this.ctx;
     kit.applyAssembled();
     effects.clear();
+    physics.resetProps();
     physics.setCar(car);
     keyboard.onReset = () => physics.resetCar();
   }

@@ -46,7 +46,10 @@ export class Keyboard {
     });
     target.addEventListener('keyup', (e) => {
       const action = KEY_MAP[e.code];
-      if (action) this.keys[action] = false;
+      if (action) {
+        this.keys[action] = false;
+        if (this.enabled) e.preventDefault();
+      }
     });
     window.addEventListener('blur', () => {
       this.keys = {};
